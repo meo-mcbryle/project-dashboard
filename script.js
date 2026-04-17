@@ -54,15 +54,24 @@ function renderYearButtons(years) {
     `).join('');
 }
 
-// Helper to handle legacy single strings and new JSON arrays
+// Helper to handle legacy single strings, simple arrays, and new name/url objects
 function parseFiles(fileData) {
-    if (!fileData || fileData === '#') return [];
+    if (!fileData || fileData === '#' || fileData === '[]') return [];
     try {
         const parsed = JSON.parse(fileData);
-        return Array.isArray(parsed) ? parsed : [parsed];
+        const array = Array.isArray(parsed) ? parsed : [parsed];
+        // Normalize all items to { name: string, url: string }
+        return array.map(item => {
+            if (typeof item === 'string') {
+                // Fallback: Extract filename from URL and remove the random prefix
+                const name = item.split('/').pop().split('-').slice(1).join('-') || 'File';
+                return { name, url: item };
+            }
+            return item;
+        });
     } catch (e) {
-        // Fallback for plain string URLs
-        return [fileData];
+        const name = fileData.split('/').pop() || 'File';
+        return [{ name, url: fileData }];
     }
 }
 
@@ -85,7 +94,7 @@ function renderTable() {
     });
 
     // Get the first available image for the thumbnail preview
-    const getFirstImage = (links) => links.find(url => isImage(url));
+    const getFirstImage = (files) => files.find(f => isImage(f.url));
 
     if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${isAdmin ? 5 : 4}" class="no-results">No projects found matching your criteria.</td></tr>`;
@@ -98,7 +107,7 @@ function renderTable() {
                 ${isAdmin ? 
                     `<input type="text" value="${item.title}" onchange="updateItem(${item.id}, 'title', this.value)">` : 
                     `<strong>${item.title}</strong>`}
-                ${getFirstImage(parseFiles(item.file_link)) ? `<img src="${getFirstImage(parseFiles(item.file_link))}" alt="Preview" class="thumbnail-preview">` : ''}
+                ${getFirstImage(parseFiles(item.file_link)) ? `<img src="${getFirstImage(parseFiles(item.file_link)).url}" alt="Preview" class="thumbnail-preview">` : ''}
             </td>
             <td>${isAdmin ? `<input type="text" value="${item.location}" onchange="updateItem(${item.id}, 'location', this.value)">` : item.location}</td>
             <td>
@@ -183,10 +192,10 @@ function renderModalFiles() {
         return;
     }
 
-    listContainer.innerHTML = files.map((url, idx) => `
+    listContainer.innerHTML = files.map((file) => `
         <div class="file-item">
-            <a href="${url}" target="_blank">Attachment ${idx + 1}</a>
-            ${isAdmin ? `<button class="btn-remove-file" onclick="removeFile(${project.id}, '${url}')">&times;</button>` : ''}
+            <a href="${file.url}" target="_blank">${file.name}</a>
+            ${isAdmin ? `<button class="btn-remove-file" onclick="removeFile(${project.id}, '${file.url}')">&times;</button>` : ''}
         </div>
     `).join('');
 }
@@ -237,6 +246,7 @@ async function handleModalUpload(event) {
     const fileExt = file.name.split('.').pop();
     const fileName = `${id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `${fileName}`;
+    const originalName = file.name;
     
     const item = allData.find(i => i.id === id);
     const currentFiles = parseFiles(item ? item.file_link : null);
@@ -257,7 +267,7 @@ async function handleModalUpload(event) {
         .getPublicUrl(filePath);
 
     // 3. Update the table with the appended list
-    currentFiles.push(publicUrl);
+    currentFiles.push({ name: originalName, url: publicUrl });
     await updateItem(id, 'file_link', JSON.stringify(currentFiles));
     
     // Refresh both UI layers
@@ -271,7 +281,7 @@ async function removeFile(projectId, fileUrl) {
     if (!item) return;
 
     const currentFiles = parseFiles(item.file_link);
-    const updatedFiles = currentFiles.filter(url => url !== fileUrl);
+    const updatedFiles = currentFiles.filter(file => file.url !== fileUrl);
 
     // 1. Update Database
     await updateItem(projectId, 'file_link', JSON.stringify(updatedFiles));
