@@ -19,6 +19,7 @@ let activeModalProjectId = null;
 // --- INITIALIZATION ---
 async function init() {
     await fetchData();
+    initDropZone();
     // Debugging check: Verify if the 'status' column exists in returned data
     if (allData.length > 0 && !allData[0].hasOwnProperty('status')) {
         console.error("Schema Mismatch: The 'status' column is missing from your Supabase table.");
@@ -328,10 +329,36 @@ async function updateItem(id, field, value) {
     }
 }
 
+function initDropZone() {
+    const dz = document.getElementById('drop-zone');
+    if (!dz) return;
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(name => {
+        dz.addEventListener(name, e => { e.preventDefault(); e.stopPropagation(); }, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(name => {
+        dz.addEventListener(name, () => dz.classList.add('drop-zone--over'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(name => {
+        dz.addEventListener(name, () => dz.classList.remove('drop-zone--over'), false);
+    });
+
+    dz.addEventListener('drop', e => {
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length) uploadFiles(files);
+    }, false);
+}
+
 async function handleModalUpload(event) {
-    const files = Array.from(event.target.files);
+    await uploadFiles(Array.from(event.target.files));
+    event.target.value = ''; // Reset input
+}
+
+async function uploadFiles(files) {
     const id = activeModalProjectId;
-    if (files.length === 0) return;
+    if (!id || files.length === 0) return;
     
     const listContainer = document.getElementById('modal-file-list');
     const item = allData.find(i => i.id === id);
@@ -389,7 +416,6 @@ async function handleModalUpload(event) {
 
     await updateItem(id, 'file_link', JSON.stringify(currentFiles));
     renderModalFiles();
-    event.target.value = ''; // Reset input
 }
 
 async function handleAddUrl() {

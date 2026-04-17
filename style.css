@@ -145,6 +145,22 @@ a:hover { text-decoration: underline; }
 .progress-fill { background: var(--primary); height: 100%; width: 0%; transition: width 0.1s ease; }
 .uploading-item { flex-direction: column; align-items: stretch; border-style: dashed; }
 
+.drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+}
+.drop-zone:hover, .drop-zone--over {
+    border-color: var(--primary);
+    background: #eff6ff;
+}
+.drop-zone p { margin: 0; font-size: 0.875rem; color: var(--text-muted); }
+.drop-zone strong { color: var(--primary); }
+
 .btn-remove-file { 
     background: none; border: none; color: var(--danger); cursor: pointer; 
     padding: 4px 8px; font-size: 1.1rem; line-height: 1; font-weight: bold;
