@@ -53,6 +53,18 @@ function renderYearButtons(years) {
     `).join('');
 }
 
+// Helper to handle legacy single strings and new JSON arrays
+function parseFiles(fileData) {
+    if (!fileData || fileData === '#') return [];
+    try {
+        const parsed = JSON.parse(fileData);
+        return Array.isArray(parsed) ? parsed : [parsed];
+    } catch (e) {
+        // Fallback for plain string URLs
+        return [fileData];
+    }
+}
+
 function renderTable() {
     const label = document.getElementById('current-year-label');
     if (label) label.innerText = `Year: ${currentYear || 'N/A'}`;
@@ -71,6 +83,9 @@ function renderTable() {
         return sortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
     });
 
+    // Get the first available image for the thumbnail preview
+    const getFirstImage = (links) => links.find(url => isImage(url));
+
     if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="${isAdmin ? 5 : 4}" class="no-results">No projects found matching your criteria.</td></tr>`;
         return;
@@ -82,7 +97,7 @@ function renderTable() {
                 ${isAdmin ? 
                     `<input type="text" value="${item.title}" onchange="updateItem(${item.id}, 'title', this.value)">` : 
                     `<strong>${item.title}</strong>`}
-                ${isImage(item.file_link) ? `<img src="${item.file_link}" alt="Preview" class="thumbnail-preview">` : ''}
+                ${getFirstImage(parseFiles(item.file_link)) ? `<img src="${getFirstImage(parseFiles(item.file_link))}" alt="Preview" class="thumbnail-preview">` : ''}
             </td>
             <td>${isAdmin ? `<input type="text" value="${item.location}" onchange="updateItem(${item.id}, 'location', this.value)">` : item.location}</td>
             <td>
@@ -96,12 +111,18 @@ function renderTable() {
                 }
             </td>
             <td>
-                ${isAdmin ? 
-                    `<div style="display:flex; flex-direction:column; gap:4px;">
-                        <input type="text" id="link-${item.id}" value="${item.file_link}" onchange="updateItem(${item.id}, 'file_link', this.value)" placeholder="URL or upload below">
-                        <input type="file" onchange="handleFileUpload(${item.id}, event)" style="font-size: 0.7rem; color: var(--text-muted);">
-                    </div>` : 
-                    `<a href="${item.file_link}" target="_blank">View File</a>`}
+                <div class="file-list">
+                    ${parseFiles(item.file_link).map((url, idx) => `
+                        <div class="file-item">
+                            <a href="${url}" target="_blank">View File ${idx + 1}</a>
+                            ${isAdmin ? `<button class="btn-remove-file" onclick="removeFile(${item.id}, '${url}')" title="Remove file">×</button>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                ${isAdmin ? `
+                    <div style="margin-top:8px; border-top:1px dashed var(--border); padding-top:8px;">
+                        <input type="file" onchange="handleFileUpload(${item.id}, event)" style="font-size: 0.7rem; width:100%;">
+                    </div>` : ''}
             </td>
             <td class="admin-only" style="${isAdmin ? '' : 'display:none'}">
                 <button class="btn-delete" onclick="deleteItem(${item.id})">Delete</button>
@@ -183,9 +204,12 @@ async function handleFileUpload(id, event) {
     const fileExt = file.name.split('.').pop();
     const fileName = `${id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `${fileName}`;
+    
+    const item = allData.find(i => i.id === id);
+    const currentFiles = parseFiles(item ? item.file_link : null);
 
     // 1. Upload file to Supabase Storage
-    const { data, error: uploadError } = await supabaseClient.storage
+    const { error: uploadError } = await supabaseClient.storage
         .from(BUCKET_NAME)
         .upload(filePath, file);
 
@@ -199,9 +223,36 @@ async function handleFileUpload(id, event) {
         .from(BUCKET_NAME)
         .getPublicUrl(filePath);
 
-    // 3. Update the table with the new URL
-    await updateItem(id, 'file_link', publicUrl);
-    renderTable(); // Refresh UI to show the new link
+    // 3. Update the table with the appended list
+    currentFiles.push(publicUrl);
+    await updateItem(id, 'file_link', JSON.stringify(currentFiles));
+    renderTable();
+}
+
+async function removeFile(projectId, fileUrl) {
+    if (!confirm("Are you sure you want to remove this specific file?")) return;
+
+    const item = allData.find(i => i.id === projectId);
+    if (!item) return;
+
+    const currentFiles = parseFiles(item.file_link);
+    const updatedFiles = currentFiles.filter(url => url !== fileUrl);
+
+    // 1. Update Database
+    await updateItem(projectId, 'file_link', JSON.stringify(updatedFiles));
+
+    // 2. Attempt to delete from Storage (extract path from URL)
+    try {
+        const urlParts = fileUrl.split(`${BUCKET_NAME}/`);
+        if (urlParts.length > 1) {
+            const filePath = urlParts[1];
+            await supabaseClient.storage.from(BUCKET_NAME).remove([filePath]);
+        }
+    } catch (e) {
+        console.warn("Could not delete file from storage:", e);
+    }
+
+    renderTable();
 }
 
 async function deleteItem(id) {
@@ -219,7 +270,7 @@ async function addNewProject() {
         alert("Please enter a valid number for the year.");
         return;
     }
-    const newProject = { year: year, title: 'New Title', location: 'Location', file_link: '#', status: 'In Progress' };
+    const newProject = { year: year, title: 'New Title', location: 'Location', file_link: '[]', status: 'In Progress' };
     const { error } = await supabaseClient.from('projects').insert([newProject]);
     if (error) {
         alert(`Insert failed: ${error.message}`);

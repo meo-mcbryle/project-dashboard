@@ -80,3 +80,16 @@ a:hover { text-decoration: underline; }
 
 /* Loading State */
 .loading-text, .no-results { color: var(--text-muted); font-style: italic; padding: 40px; text-align: center; }
+
+/* Multi-file Styles */
+.file-list { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.file-item { 
+    display: flex; align-items: center; justify-content: space-between; 
+    background: #f1f5f9; padding: 4px 8px; border-radius: 6px; gap: 8px;
+    border: 1px solid var(--border);
+}
+.file-item a { font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.btn-remove-file { 
+    background: none; border: none; color: var(--danger); cursor: pointer; 
+    padding: 0 4px; font-size: 1rem; line-height: 1; font-weight: bold;
+}
