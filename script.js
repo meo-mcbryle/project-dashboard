@@ -289,9 +289,10 @@ async function removeFile(projectId, fileUrl) {
     // 2. Attempt to delete from Storage (extract path from URL)
     const urlParts = fileUrl.split(`${BUCKET_NAME}/`);
     if (urlParts.length > 1) {
-        const filePath = urlParts[1];
+        // Strip query parameters and decode URI components (e.g. %20 -> space)
+        const filePath = decodeURIComponent(urlParts[1].split('?')[0]);
         const { error: storageError } = await supabaseClient.storage.from(BUCKET_NAME).remove([filePath]);
-        if (storageError) console.warn("Could not delete file from storage:", storageError);
+        if (storageError) alert("Storage deletion failed: " + storageError.message);
     }
 
     renderModalFiles();
@@ -306,7 +307,8 @@ async function deleteItem(id) {
         const files = parseFiles(project.file_link);
         const pathsToDelete = files.map(file => {
             const parts = file.url.split(`${BUCKET_NAME}/`);
-            return parts.length > 1 ? parts[1] : null;
+            // Ensure we get the clean, decoded file path
+            return parts.length > 1 ? decodeURIComponent(parts[1].split('?')[0]) : null;
         }).filter(p => p !== null);
 
         // 2. Delete all associated files from Storage
