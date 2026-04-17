@@ -51,6 +51,21 @@
     </div>
 </div>
 
+<!-- File Modal -->
+<div id="file-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-project-title">Project Files</h3>
+            <button class="close-modal" onclick="closeModal()">&times;</button>
+        </div>
+        <div id="modal-file-list" class="file-list"></div>
+        <div id="modal-admin-section" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); display: none;">
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Upload New Attachment</label>
+            <input type="file" id="modal-file-upload" onchange="handleModalUpload(event)" style="font-size: 0.875rem;">
+        </div>
+    </div>
+</div>
+
     <script src="script.js"></script>
 
 </body>

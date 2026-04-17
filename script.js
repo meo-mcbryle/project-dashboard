@@ -14,6 +14,7 @@ let sortCol = 'title';
 let sortDir = 'asc';
 
 const STATUS_OPTIONS = ['In Progress', 'Completed', 'Archived'];
+let activeModalProjectId = null;
 
 // --- INITIALIZATION ---
 async function init() {
@@ -111,18 +112,12 @@ function renderTable() {
                 }
             </td>
             <td>
-                <div class="file-list">
-                    ${parseFiles(item.file_link).map((url, idx) => `
-                        <div class="file-item">
-                            <a href="${url}" target="_blank">View File ${idx + 1}</a>
-                            ${isAdmin ? `<button class="btn-remove-file" onclick="removeFile(${item.id}, '${url}')" title="Remove file">×</button>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-                ${isAdmin ? `
-                    <div style="margin-top:8px; border-top:1px dashed var(--border); padding-top:8px;">
-                        <input type="file" onchange="handleFileUpload(${item.id}, event)" style="font-size: 0.7rem; width:100%;">
-                    </div>` : ''}
+                ${parseFiles(item.file_link).length > 0 ? 
+                    `<button class="btn-view-files" onclick="openFileModal(${item.id})">
+                        View Files (${parseFiles(item.file_link).length})
+                     </button>` : 
+                    `<span style="color:var(--text-muted); font-size:0.875rem">No files attached</span>`
+                }
             </td>
             <td class="admin-only" style="${isAdmin ? '' : 'display:none'}">
                 <button class="btn-delete" onclick="deleteItem(${item.id})">Delete</button>
@@ -166,6 +161,43 @@ function isImage(url) {
     return url && (url.match(/\.(jpeg|jpg|gif|png)$/) != null);
 }
 
+// --- MODAL LOGIC ---
+function openFileModal(projectId) {
+    activeModalProjectId = projectId;
+    const project = allData.find(p => p.id === projectId);
+    if (!project) return;
+
+    document.getElementById('modal-project-title').innerText = project.title;
+    document.getElementById('modal-admin-section').style.display = isAdmin ? 'block' : 'none';
+    renderModalFiles();
+    document.getElementById('file-modal').style.display = 'flex';
+}
+
+function renderModalFiles() {
+    const project = allData.find(p => p.id === activeModalProjectId);
+    const listContainer = document.getElementById('modal-file-list');
+    const files = parseFiles(project ? project.file_link : '[]');
+
+    if (files.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:0.875rem;">No files uploaded yet.</p>';
+        return;
+    }
+
+    listContainer.innerHTML = files.map((url, idx) => `
+        <div class="file-item">
+            <a href="${url}" target="_blank">Attachment ${idx + 1}</a>
+            ${isAdmin ? `<button class="btn-remove-file" onclick="removeFile(${project.id}, '${url}')">&times;</button>` : ''}
+        </div>
+    `).join('');
+}
+
+function closeModal() {
+    document.getElementById('file-modal').style.display = 'none';
+    activeModalProjectId = null;
+    document.getElementById('modal-file-upload').value = ''; // Reset input
+    renderTable(); // Sync main table
+}
+
 // --- ADMIN ACTIONS ---
 function handleAuthClick() {
     if (isAdmin) { logout(); return; }
@@ -197,8 +229,9 @@ async function updateItem(id, field, value) {
     }
 }
 
-async function handleFileUpload(id, event) {
+async function handleModalUpload(event) {
     const file = event.target.files[0];
+    const id = activeModalProjectId;
     if (!file) return;
 
     const fileExt = file.name.split('.').pop();
@@ -226,7 +259,9 @@ async function handleFileUpload(id, event) {
     // 3. Update the table with the appended list
     currentFiles.push(publicUrl);
     await updateItem(id, 'file_link', JSON.stringify(currentFiles));
-    renderTable();
+    
+    // Refresh both UI layers
+    renderModalFiles();
 }
 
 async function removeFile(projectId, fileUrl) {
@@ -252,7 +287,7 @@ async function removeFile(projectId, fileUrl) {
         console.warn("Could not delete file from storage:", e);
     }
 
-    renderTable();
+    renderModalFiles();
 }
 
 async function deleteItem(id) {
