@@ -329,39 +329,41 @@ async function updateItem(id, field, value) {
 }
 
 async function handleModalUpload(event) {
-    const file = event.target.files[0];
+    const files = Array.from(event.target.files);
     const id = activeModalProjectId;
-    if (!file) return;
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${fileName}`;
-    const originalName = file.name;
+    if (files.length === 0) return;
     
     const item = allData.find(i => i.id === id);
     const currentFiles = parseFiles(item ? item.file_link : null);
 
-    // 1. Upload file to Supabase Storage
-    const { error: uploadError } = await supabaseClient.storage
-        .from(BUCKET_NAME)
-        .upload(filePath, file);
+    for (const file of files) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${fileName}`;
+        const originalName = file.name;
 
-    if (uploadError) {
-        alert("Upload failed: " + uploadError.message);
-        return;
+        // 1. Upload file to Supabase Storage
+        const { error: uploadError } = await supabaseClient.storage
+            .from(BUCKET_NAME)
+            .upload(filePath, file);
+
+        if (uploadError) {
+            console.error(`Upload failed for ${originalName}:`, uploadError.message);
+            continue;
+        }
+
+        // 2. Get Public URL
+        const { data: { publicUrl } } = supabaseClient.storage
+            .from(BUCKET_NAME)
+            .getPublicUrl(filePath);
+
+        currentFiles.push({ name: originalName, url: publicUrl });
     }
 
-    // 2. Get Public URL
-    const { data: { publicUrl } } = supabaseClient.storage
-        .from(BUCKET_NAME)
-        .getPublicUrl(filePath);
-
-    // 3. Update the table with the appended list
-    currentFiles.push({ name: originalName, url: publicUrl });
+    // 3. Update the database once after all uploads finish
     await updateItem(id, 'file_link', JSON.stringify(currentFiles));
-    
-    // Refresh both UI layers
     renderModalFiles();
+    event.target.value = ''; // Reset input
 }
 
 async function handleAddUrl() {
