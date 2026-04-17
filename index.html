@@ -274,11 +274,14 @@
             { year: year, title: 'New Title', location: 'Location', file_link: '#', status: 'In Progress' }
         ]);
         
-        if (error) alert("Insert failed: " + error.message);
-        else {
-            currentYear = year;
-            await fetchData();
+        if (error) {
+            console.error("Insert Error Details:", error);
+            alert("Insert failed: " + error.message);
+            return;
         }
+        
+        currentYear = year;
+        await fetchData();
     }
 
     // Start
