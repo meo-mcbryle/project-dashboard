@@ -3,6 +3,7 @@ const SUPABASE_URL = 'https://otqxzgbjumsasmfdotia.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90cXh6Z2JqdW1zYXNtZmRvdGlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTkyNzgsImV4cCI6MjA5MTk5NTI3OH0.KYVnaM3rqGxCj2sduiIoEhCuedwuYn9HZUvgqD0VNL4';
 const ADMIN_PASSWORD = 'jharold'; // Change this!
 
+const BUCKET_NAME = 'project-files'; // Ensure this bucket exists in Supabase Storage
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allData = [];
@@ -96,7 +97,10 @@ function renderTable() {
             </td>
             <td>
                 ${isAdmin ? 
-                    `<input type="text" value="${item.file_link}" onchange="updateItem(${item.id}, 'file_link', this.value)">` : 
+                    `<div style="display:flex; flex-direction:column; gap:4px;">
+                        <input type="text" id="link-${item.id}" value="${item.file_link}" onchange="updateItem(${item.id}, 'file_link', this.value)" placeholder="URL or upload below">
+                        <input type="file" onchange="handleFileUpload(${item.id}, event)" style="font-size: 0.7rem; color: var(--text-muted);">
+                    </div>` : 
                     `<a href="${item.file_link}" target="_blank">View File</a>`}
             </td>
             <td class="admin-only" style="${isAdmin ? '' : 'display:none'}">
@@ -170,6 +174,34 @@ async function updateItem(id, field, value) {
         const item = allData.find(i => i.id === id);
         if (item) item[field] = value;
     }
+}
+
+async function handleFileUpload(id, event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    // 1. Upload file to Supabase Storage
+    const { data, error: uploadError } = await supabaseClient.storage
+        .from(BUCKET_NAME)
+        .upload(filePath, file);
+
+    if (uploadError) {
+        alert("Upload failed: " + uploadError.message);
+        return;
+    }
+
+    // 2. Get Public URL
+    const { data: { publicUrl } } = supabaseClient.storage
+        .from(BUCKET_NAME)
+        .getPublicUrl(filePath);
+
+    // 3. Update the table with the new URL
+    await updateItem(id, 'file_link', publicUrl);
+    renderTable(); // Refresh UI to show the new link
 }
 
 async function deleteItem(id) {
