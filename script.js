@@ -1,7 +1,7 @@
 // --- CONFIGURATION ---
 const SUPABASE_URL = 'https://otqxzgbjumsasmfdotia.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90cXh6Z2JqdW1zYXNtZmRvdGlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTkyNzgsImV4cCI6MjA5MTk5NTI3OH0.KYVnaM3rqGxCj2sduiIoEhCuedwuYn9HZUvgqD0VNL4';
-const ADMIN_PASSWORD = 'brybry'; // Change this!
+const ADMIN_PASSWORD = 'jharold'; // Change this!
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
