@@ -138,6 +138,13 @@ a:hover { text-decoration: underline; }
 }
 .file-item:hover { border-color: var(--primary); background: #fff; }
 .file-item a { font-size: 0.875rem; color: var(--text-main); font-weight: 500; text-decoration: none; flex-grow: 1; }
+
+/* Upload Progress UI */
+.upload-info { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+.progress-bg { background: #e2e8f0; height: 6px; border-radius: 3px; overflow: hidden; width: 100%; }
+.progress-fill { background: var(--primary); height: 100%; width: 0%; transition: width 0.1s ease; }
+.uploading-item { flex-direction: column; align-items: stretch; border-style: dashed; }
+
 .btn-remove-file { 
     background: none; border: none; color: var(--danger); cursor: pointer; 
     padding: 4px 8px; font-size: 1.1rem; line-height: 1; font-weight: bold;
@@ -175,8 +182,4 @@ a:hover { text-decoration: underline; }
     white-space: nowrap;
     display: inline-block;
 }
-<<<<<<< HEAD
 .btn-view-files:hover { background: #e2e8f0; border-color: #cbd5e1; }
-=======
-.btn-view-files:hover { background: #e2e8f0; border-color: #cbd5e1; }
->>>>>>> 57fb6bdfb847b5655f08fb3498a57b60ad6aadc2

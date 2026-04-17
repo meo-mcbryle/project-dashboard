@@ -333,34 +333,60 @@ async function handleModalUpload(event) {
     const id = activeModalProjectId;
     if (files.length === 0) return;
     
+    const listContainer = document.getElementById('modal-file-list');
     const item = allData.find(i => i.id === id);
     const currentFiles = parseFiles(item ? item.file_link : null);
 
-    for (const file of files) {
+    // Clear "No files" message if present
+    if (listContainer.innerText.includes('No files uploaded yet')) {
+        listContainer.innerHTML = '';
+    }
+
+    const uploadPromises = files.map(async (file) => {
         const fileExt = file.name.split('.').pop();
         const fileName = `${id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `${fileName}`;
         const originalName = file.name;
 
-        // 1. Upload file to Supabase Storage
+        // Create individual progress UI
+        const uploadEl = document.createElement('div');
+        uploadEl.className = 'file-item uploading-item';
+        uploadEl.innerHTML = `
+            <div class="upload-info">
+                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80%">${originalName}</span>
+                <span class="progress-percent">0%</span>
+            </div>
+            <div class="progress-bg"><div class="progress-fill"></div></div>
+        `;
+        listContainer.appendChild(uploadEl);
+
+        // 1. Upload file with progress tracking
         const { error: uploadError } = await supabaseClient.storage
             .from(BUCKET_NAME)
-            .upload(filePath, file);
+            .upload(filePath, file, {
+                onUploadProgress: (progress) => {
+                    const percent = Math.round((progress.loaded / progress.total) * 100);
+                    uploadEl.querySelector('.progress-fill').style.width = `${percent}%`;
+                    uploadEl.querySelector('.progress-percent').innerText = `${percent}%`;
+                }
+            });
 
         if (uploadError) {
             console.error(`Upload failed for ${originalName}:`, uploadError.message);
-            continue;
+            uploadEl.style.borderColor = 'var(--danger)';
+            uploadEl.querySelector('.progress-fill').style.background = 'var(--danger)';
+            uploadEl.querySelector('.upload-info').innerHTML = `<span>Error: ${originalName}</span>`;
+            setTimeout(() => uploadEl.remove(), 3000);
+            return;
         }
 
-        // 2. Get Public URL
-        const { data: { publicUrl } } = supabaseClient.storage
-            .from(BUCKET_NAME)
-            .getPublicUrl(filePath);
-
+        const { data: { publicUrl } } = supabaseClient.storage.from(BUCKET_NAME).getPublicUrl(filePath);
         currentFiles.push({ name: originalName, url: publicUrl });
-    }
+        uploadEl.remove(); // Remove progress UI when done
+    });
 
-    // 3. Update the database once after all uploads finish
+    await Promise.all(uploadPromises);
+
     await updateItem(id, 'file_link', JSON.stringify(currentFiles));
     renderModalFiles();
     event.target.value = ''; // Reset input
