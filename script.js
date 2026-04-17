@@ -264,15 +264,12 @@ function openFileModal(projectId) {
 
 function renderModalFiles() {
     const project = allData.find(p => p.id === activeModalProjectId);
-    const listContainer = document.getElementById('modal-file-list');
+    const containers = [document.getElementById('modal-file-list'), document.getElementById('edit-file-list')];
     const files = parseFiles(project ? project.file_link : '[]');
 
-    if (files.length === 0) {
-        listContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:0.875rem;">No files uploaded yet.</p>';
-        return;
-    }
-
-    listContainer.innerHTML = files.map((file) => {
+    const html = files.length === 0 
+        ? '<p style="text-align:center; color:var(--text-muted); font-size:0.875rem;">No files uploaded yet.</p>'
+        : files.map((file) => {
         const isExternal = !file.url.includes(SUPABASE_URL);
         return `
             <div class="file-item">
@@ -282,6 +279,8 @@ function renderModalFiles() {
             </div>
         `;
     }).join('');
+
+    containers.forEach(c => { if(c) c.innerHTML = html; });
 }
 
 function closeModal() {
@@ -306,12 +305,25 @@ function openEditModal(projectId) {
         <option value="${opt}" ${ (project.status || 'In Progress') === opt ? 'selected' : ''}>${opt}</option>
     `).join('');
 
+    renderModalFiles();
     document.getElementById('edit-modal').style.display = 'flex';
 }
 
 function closeEditModal() {
     document.getElementById('edit-modal').style.display = 'none';
     activeModalProjectId = null;
+    document.getElementById('edit-file-upload').value = '';
+    document.getElementById('edit-url-upload').value = '';
+    renderTable();
+}
+
+function getActiveFileElements() {
+    const isEditModal = document.getElementById('edit-modal').style.display === 'flex';
+    return {
+        list: document.getElementById(isEditModal ? 'edit-file-list' : 'modal-file-list'),
+        urlInput: document.getElementById(isEditModal ? 'edit-url-upload' : 'modal-url-upload'),
+        fileInput: document.getElementById(isEditModal ? 'edit-file-upload' : 'modal-file-upload')
+    };
 }
 
 async function handleEditSave() {
@@ -365,25 +377,28 @@ async function updateItem(id, field, value) {
 }
 
 function initDropZone() {
-    const dz = document.getElementById('drop-zone');
-    if (!dz) return;
+    const zones = [document.getElementById('drop-zone'), document.getElementById('edit-drop-zone')];
+    
+    zones.forEach(dz => {
+        if (!dz) return;
 
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(name => {
-        dz.addEventListener(name, e => { e.preventDefault(); e.stopPropagation(); }, false);
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(name => {
+            dz.addEventListener(name, e => { e.preventDefault(); e.stopPropagation(); }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(name => {
+            dz.addEventListener(name, () => dz.classList.add('drop-zone--over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(name => {
+            dz.addEventListener(name, () => dz.classList.remove('drop-zone--over'), false);
+        });
+
+        dz.addEventListener('drop', e => {
+            const files = Array.from(e.dataTransfer.files);
+            if (files.length) uploadFiles(files);
+        }, false);
     });
-
-    ['dragenter', 'dragover'].forEach(name => {
-        dz.addEventListener(name, () => dz.classList.add('drop-zone--over'), false);
-    });
-
-    ['dragleave', 'drop'].forEach(name => {
-        dz.addEventListener(name, () => dz.classList.remove('drop-zone--over'), false);
-    });
-
-    dz.addEventListener('drop', e => {
-        const files = Array.from(e.dataTransfer.files);
-        if (files.length) uploadFiles(files);
-    }, false);
 }
 
 async function handleModalUpload(event) {
@@ -395,7 +410,7 @@ async function uploadFiles(files) {
     const id = activeModalProjectId;
     if (!id || files.length === 0) return;
     
-    const listContainer = document.getElementById('modal-file-list');
+    const { list: listContainer } = getActiveFileElements();
     const item = allData.find(i => i.id === id);
     const currentFiles = parseFiles(item ? item.file_link : null);
 
@@ -454,7 +469,7 @@ async function uploadFiles(files) {
 }
 
 async function handleAddUrl() {
-    const urlInput = document.getElementById('modal-url-upload');
+    const { urlInput } = getActiveFileElements();
     const url = urlInput.value.trim();
     const id = activeModalProjectId;
     

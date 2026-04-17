@@ -77,6 +77,22 @@
                     <select id="edit-proj-status"></select>
                 </div>
             </div>
+            <div style="margin-top: 10px; padding-top: 20px; border-top: 1px solid var(--border);">
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Project Files</label>
+                <div id="edit-file-list" class="file-list" style="margin-bottom: 16px;"></div>
+                
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Add Attachment</label>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div id="edit-drop-zone" class="drop-zone" onclick="document.getElementById('edit-file-upload').click()">
+                        <p><strong>Click to upload</strong> or drag and drop</p>
+                        <input type="file" id="edit-file-upload" onchange="handleModalUpload(event)" style="display: none;" multiple>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="edit-url-upload" placeholder="Or paste a file URL..." style="width: auto; flex-grow: 1;">
+                        <button onclick="handleAddUrl()" style="background: var(--primary); color: white; border: none; padding: 0 16px; border-radius: 6px; font-weight: 600; flex-shrink: 0;">Link</button>
+                    </div>
+                </div>
+            </div>
             <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; padding-top: 20px; border-top: 1px solid var(--border);">
                 <button onclick="closeEditModal()" style="padding: 10px 18px; color: var(--text-muted);">Cancel</button>
                 <button onclick="handleEditSave()" style="padding: 10px 18px; background:var(--primary); color:white; border-radius: 8px;">Save Changes</button>
