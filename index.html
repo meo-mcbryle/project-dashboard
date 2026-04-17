@@ -117,6 +117,10 @@
     // --- INITIALIZATION ---
     async function init() {
         await fetchData();
+        // Debugging check: Verify if the 'status' column exists in returned data
+        if (allData.length > 0 && !allData[0].hasOwnProperty('status')) {
+            console.error("Schema Mismatch: The 'status' column is missing from your Supabase table.");
+        }
     }
 
     async function fetchData() {
@@ -270,13 +274,19 @@
             return;
         }
         
-        const { error } = await supabaseClient.from('projects').insert([
-            { year: year, title: 'New Title', location: 'Location', file_link: '#', status: 'In Progress' }
-        ]);
+        const newProject = { 
+            year: year, 
+            title: 'New Title', 
+            location: 'Location', 
+            file_link: '#', 
+            status: 'In Progress' 
+        };
+
+        const { error } = await supabaseClient.from('projects').insert([newProject]);
         
         if (error) {
-            console.error("Insert Error Details:", error);
-            alert("Insert failed: " + error.message);
+            console.error("Insert failed. If the error mentions 'schema cache', ensure the 'status' column exists in Supabase.", error);
+            alert(`Insert failed: ${error.message}`);
             return;
         }
         
