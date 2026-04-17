@@ -44,14 +44,46 @@ button.active { background: var(--card); color: var(--primary); box-shadow: 0 1p
 .admin-controls { display: flex; gap: 15px; align-items: center; }
 
 /* Table Styling */
-.table-container { overflow-x: auto; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid var(--border); }
-table { width: 100%; border-collapse: collapse; background: var(--card); }
+.table-container { 
+    overflow-x: auto; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); 
+    border: 1px solid var(--border); 
+}
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    background: var(--card); 
+    table-layout: fixed; /* Ensures column widths are respected */
+}
 th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
 th { background: #f8fafc; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; color: var(--text-muted); }
 tr:hover td { background: #f8fafc; transition: background 0.1s ease; }
 tr:last-child td { border-bottom: none; }
 
-.title-cell strong { display: block; color: var(--text-main); font-size: 0.95rem; }
+/* Column Widths */
+.col-title { width: 35%; }
+.col-location { width: 25%; }
+.col-status { width: 15%; }
+.col-files { width: 15%; }
+.col-admin { width: 10%; }
+
+.title-cell strong { 
+    display: block; 
+    color: var(--text-main); 
+    font-size: 0.95rem; 
+    line-height: 1.4;
+    word-wrap: break-word; /* Allow long titles to wrap */
+}
+
+.location-text {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
 
 input[type="text"], input[type="number"], select { 
     width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.875rem; outline: none; transition: all 0.2s;

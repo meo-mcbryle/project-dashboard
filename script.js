@@ -103,14 +103,18 @@ function renderTable() {
 
     tbody.innerHTML = filtered.map(item => `
         <tr>
-            <td class="title-cell">
+            <td class="title-cell col-title" title="${item.title}">
                 ${isAdmin ? 
                     `<input type="text" value="${item.title}" onchange="updateItem(${item.id}, 'title', this.value)">` : 
                     `<strong>${item.title}</strong>`}
                 ${getFirstImage(parseFiles(item.file_link)) ? `<img src="${getFirstImage(parseFiles(item.file_link)).url}" alt="Preview" class="thumbnail-preview">` : ''}
             </td>
-            <td>${isAdmin ? `<input type="text" value="${item.location}" onchange="updateItem(${item.id}, 'location', this.value)">` : item.location}</td>
-            <td>
+            <td class="col-location" title="${item.location}">
+                ${isAdmin ? 
+                    `<input type="text" value="${item.location}" onchange="updateItem(${item.id}, 'location', this.value)">` : 
+                    `<span class="location-text">${item.location}</span>`}
+            </td>
+            <td class="col-status">
                 ${isAdmin ? 
                     `<select onchange="updateItem(${item.id}, 'status', this.value)">
                         ${STATUS_OPTIONS.map(opt => `
@@ -120,7 +124,7 @@ function renderTable() {
                     `<span class="status-badge ${getStatusClass(item.status)}">${item.status || 'In Progress'}</span>`
                 }
             </td>
-            <td>
+            <td class="col-files">
                 ${(parseFiles(item.file_link).length > 0 || isAdmin) ? 
                     `<button class="btn-view-files" onclick="openFileModal(${item.id})">
                         ${parseFiles(item.file_link).length > 0 ? `View Files (${parseFiles(item.file_link).length})` : '+ Add Files'}
@@ -128,7 +132,7 @@ function renderTable() {
                     `<span style="color:var(--text-muted); font-size:0.875rem">No files attached</span>`
                 }
             </td>
-            <td class="admin-only" style="${isAdmin ? '' : 'display:none'}">
+            <td class="admin-only col-admin" style="${isAdmin ? '' : 'display:none'}">
                 <button class="btn-delete" onclick="deleteItem(${item.id})">Delete</button>
             </td>
         </tr>
