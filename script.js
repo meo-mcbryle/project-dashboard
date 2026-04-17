@@ -171,6 +171,35 @@ function isImage(url) {
 }
 
 // --- MODAL LOGIC ---
+function showConfirm(message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5); display: flex; align-items: center;
+            justify-content: center; z-index: 2000; transition: opacity 0.2s;
+        `;
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            background: white; padding: 24px; border-radius: 12px;
+            max-width: 400px; width: 90%; text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-family: inherit;
+        `;
+        modal.innerHTML = `
+            <p style="margin-bottom: 24px; font-size: 1.1rem; color: #333;">${message}</p>
+            <div style="display: flex; justify-content: center; gap: 12px;">
+                <button id="conf-cancel" style="padding: 10px 20px; border: 1px solid #ddd; background: #f8f9fa; border-radius: 6px; cursor: pointer; font-weight: 500;">Cancel</button>
+                <button id="conf-ok" style="padding: 10px 20px; border: none; background: #e74c3c; color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">Delete</button>
+            </div>
+        `;
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        const done = (res) => { document.body.removeChild(overlay); resolve(res); };
+        document.getElementById('conf-cancel').onclick = () => done(false);
+        document.getElementById('conf-ok').onclick = () => done(true);
+    });
+}
+
 function openFileModal(projectId) {
     activeModalProjectId = projectId;
     const project = allData.find(p => p.id === projectId);
@@ -275,7 +304,8 @@ async function handleModalUpload(event) {
 }
 
 async function removeFile(projectId, fileUrl) {
-    if (!confirm("Are you sure you want to remove this specific file?")) return;
+    const confirmed = await showConfirm("Are you sure you want to remove this specific file?");
+    if (!confirmed) return;
 
     const item = allData.find(i => i.id === projectId);
     if (!item) return;
@@ -299,7 +329,8 @@ async function removeFile(projectId, fileUrl) {
 }
 
 async function deleteItem(id) {
-    if (!confirm("Are you sure you want to delete this project?")) return;
+    const confirmed = await showConfirm("Are you sure you want to delete this project?");
+    if (!confirmed) return;
 
     // 1. Find the project and all associated files
     const project = allData.find(p => p.id === id);
