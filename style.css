@@ -1,4 +1,8 @@
-.inter-font { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+* {
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
 
 :root { 
     --primary: #2563eb; 
@@ -12,18 +16,19 @@
 }
 
 body { font-family: 'Inter', 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 40px 20px; color: var(--text-main); line-height: 1.5; }
-.container { max-width: 1000px; margin: 0 auto; }
+.container { max-width: 1100px; margin: 0 auto; }
 
 /* Header & Nav */
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 .header h1 { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.025em; margin: 0; }
 
-.year-selector { display: flex; gap: 8px; margin-bottom: 32px; background: #e2e8f0; padding: 4px; border-radius: 8px; width: fit-content; }
+.year-selector { display: flex; gap: 4px; margin-bottom: 32px; background: #f1f5f9; padding: 4px; border-radius: 10px; width: fit-content; border: 1px solid var(--border); }
 
 button { 
     padding: 8px 16px; border: 1px solid transparent; background: transparent; 
     cursor: pointer; border-radius: 6px; transition: all 0.2s ease; 
     font-weight: 500; font-size: 0.875rem;
+    color: var(--text-muted);
 }
 button:hover { background: rgba(255,255,255,0.5); }
 button.active { background: var(--card); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -36,17 +41,20 @@ button.active { background: var(--card); color: var(--primary); box-shadow: 0 1p
     display: none; background: white; padding: 20px; 
     border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; 
 }
-.admin-controls { display: flex; gap: 10px; align-items: center; }
+.admin-controls { display: flex; gap: 15px; align-items: center; }
 
 /* Table Styling */
-table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.table-container { overflow-x: auto; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; background: var(--card); }
 th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
 th { background: #f8fafc; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; color: var(--text-muted); }
-tr:hover td { background: #fbfcfe; }
+tr:hover td { background: #f8fafc; transition: background 0.1s ease; }
 tr:last-child td { border-bottom: none; }
 
+.title-cell strong { display: block; color: var(--text-main); font-size: 0.95rem; }
+
 input[type="text"], select { 
-    width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.875rem; outline: none; transition: border 0.2s;
+    width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.875rem; outline: none; transition: all 0.2s;
 }
 input[type="text"]:focus, select:focus { border-color: var(--primary); ring: 2px solid rgba(37,99,235,0.1); }
 
@@ -57,8 +65,9 @@ a { color: var(--primary); text-decoration: none; font-weight: 600; font-size: 0
 a:hover { text-decoration: underline; }
 
 /* New Features Styling */
-.search-container { margin-bottom: 15px; }
-.search-container input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+.search-container { margin-bottom: 15px; width: 100%; max-width: 300px; }
+.search-container input { background: #fff; padding-left: 35px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 10px center; background-size: 18px; }
+
 .sortable { cursor: pointer; position: relative; }
 .sortable:hover { background: #e2e8f0; }
 .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
@@ -70,4 +79,4 @@ a:hover { text-decoration: underline; }
 .title-cell:hover .thumbnail-preview { display: block; }
 
 /* Loading State */
-.loading-text { color: var(--text-muted); font-style: italic; padding: 20px; text-align: center; }
+.loading-text, .no-results { color: var(--text-muted); font-style: italic; padding: 40px; text-align: center; }

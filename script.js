@@ -70,11 +70,18 @@ function renderTable() {
         return sortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
     });
 
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${isAdmin ? 5 : 4}" class="no-results">No projects found matching your criteria.</td></tr>`;
+        return;
+    }
+
     tbody.innerHTML = filtered.map(item => `
         <tr>
             <td class="title-cell">
-                ${isAdmin ? `<input type="text" value="${item.title}" onchange="updateItem(${item.id}, 'title', this.value)">` : item.title}
-                ${isImage(item.file_link) ? `<img src="${item.file_link}" class="thumbnail-preview">` : ''}
+                ${isAdmin ? 
+                    `<input type="text" value="${item.title}" onchange="updateItem(${item.id}, 'title', this.value)">` : 
+                    `<strong>${item.title}</strong>`}
+                ${isImage(item.file_link) ? `<img src="${item.file_link}" alt="Preview" class="thumbnail-preview">` : ''}
             </td>
             <td>${isAdmin ? `<input type="text" value="${item.location}" onchange="updateItem(${item.id}, 'location', this.value)">` : item.location}</td>
             <td>

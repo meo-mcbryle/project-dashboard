@@ -33,19 +33,21 @@
                 <input type="text" id="search-input" placeholder="Search by title..." oninput="handleSearch(this.value)">
             </div>
         </div>
-        <table id="project-table">
-            <thead>
-                <tr>
-                    <th class="sortable" onclick="handleSort('title')">Title ↕</th>
-                    <th class="sortable" onclick="handleSort('location')">Location ↕</th>
-                    <th>Status</th>
-                    <th>File Link</th>
-                    <th class="admin-only" style="display:none;">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="table-body">
+        <div class="table-container">
+            <table id="project-table">
+                <thead>
+                    <tr>
+                        <th class="sortable" onclick="handleSort('title')">Title ↕</th>
+                        <th class="sortable" onclick="handleSort('location')">Location ↕</th>
+                        <th>Status</th>
+                        <th>File Link</th>
+                        <th class="admin-only" style="display:none;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
                 </tbody>
-        </table>
+            </table>
+        </div>
     </div>
 </div>
 
