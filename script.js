@@ -287,14 +287,11 @@ async function removeFile(projectId, fileUrl) {
     await updateItem(projectId, 'file_link', JSON.stringify(updatedFiles));
 
     // 2. Attempt to delete from Storage (extract path from URL)
-    try {
-        const urlParts = fileUrl.split(`${BUCKET_NAME}/`);
-        if (urlParts.length > 1) {
-            const filePath = urlParts[1];
-            await supabaseClient.storage.from(BUCKET_NAME).remove([filePath]);
-        }
-    } catch (e) {
-        console.warn("Could not delete file from storage:", e);
+    const urlParts = fileUrl.split(`${BUCKET_NAME}/`);
+    if (urlParts.length > 1) {
+        const filePath = urlParts[1];
+        const { error: storageError } = await supabaseClient.storage.from(BUCKET_NAME).remove([filePath]);
+        if (storageError) console.warn("Could not delete file from storage:", storageError);
     }
 
     renderModalFiles();
@@ -302,6 +299,24 @@ async function removeFile(projectId, fileUrl) {
 
 async function deleteItem(id) {
     if (!confirm("Are you sure you want to delete this project?")) return;
+
+    // 1. Find the project and all associated files
+    const project = allData.find(p => p.id === id);
+    if (project) {
+        const files = parseFiles(project.file_link);
+        const pathsToDelete = files.map(file => {
+            const parts = file.url.split(`${BUCKET_NAME}/`);
+            return parts.length > 1 ? parts[1] : null;
+        }).filter(p => p !== null);
+
+        // 2. Delete all associated files from Storage
+        if (pathsToDelete.length > 0) {
+            const { error: storageError } = await supabaseClient.storage.from(BUCKET_NAME).remove(pathsToDelete);
+            if (storageError) console.warn("Error purging storage files:", storageError);
+        }
+    }
+
+    // 3. Delete the database row
     const { error } = await supabaseClient.from('projects').delete().eq('id', id);
     if (error) alert("Delete failed");
     else await fetchData();
