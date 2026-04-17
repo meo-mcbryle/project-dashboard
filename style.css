@@ -62,10 +62,10 @@ tr:hover td { background: #f8fafc; transition: background 0.1s ease; }
 tr:last-child td { border-bottom: none; }
 
 /* Column Widths */
-.col-title { width: 35%; }
-.col-location { width: 25%; }
-.col-status { width: 15%; }
-.col-files { width: 15%; }
+.col-title { width: 40%; }
+.col-location { width: 30%; }
+.col-status { width: 10%; }
+.col-files { width: 10%; }
 .col-admin { width: 10%; }
 
 .title-cell strong { 
