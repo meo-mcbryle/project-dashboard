@@ -12,6 +12,8 @@ let searchQuery = '';
 let sortCol = 'title';
 let sortDir = 'asc';
 
+const STATUS_OPTIONS = ['In Progress', 'Completed', 'Archived'];
+
 // --- INITIALIZATION ---
 async function init() {
     await fetchData();
@@ -22,6 +24,7 @@ async function init() {
 }
 
 async function fetchData() {
+    document.getElementById('table-body').innerHTML = '<tr><td colspan="5" class="loading-text">Fetching projects...</td></tr>';
     const { data, error } = await supabaseClient
         .from('projects')
         .select('*')
@@ -76,7 +79,11 @@ function renderTable() {
             <td>${isAdmin ? `<input type="text" value="${item.location}" onchange="updateItem(${item.id}, 'location', this.value)">` : item.location}</td>
             <td>
                 ${isAdmin ? 
-                    `<input type="text" value="${item.status || 'In Progress'}" onchange="updateItem(${item.id}, 'status', this.value)">` : 
+                    `<select onchange="updateItem(${item.id}, 'status', this.value)">
+                        ${STATUS_OPTIONS.map(opt => `
+                            <option value="${opt}" ${ (item.status || 'In Progress') === opt ? 'selected' : ''}>${opt}</option>
+                        `).join('')}
+                    </select>` : 
                     `<span class="status-badge ${getStatusClass(item.status)}">${item.status || 'In Progress'}</span>`
                 }
             </td>
