@@ -2,77 +2,281 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #2563eb; --danger: #dc2626; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        
+        /* Header & Nav */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .year-selector { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 10px; }
+        
+        button { 
+            padding: 8px 16px; border: 1px solid #cbd5e1; background: white; 
+            cursor: pointer; border-radius: 6px; transition: 0.2s; 
+        }
+        button:hover { background: #f1f5f9; }
+        button.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Admin Panel */
+        #admin-panel { 
+            display: none; background: white; padding: 20px; 
+            border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; 
+        }
+        .admin-controls { display: flex; gap: 10px; align-items: center; }
+
+        /* Table Styling */
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; }
+        tr:last-child td { border-bottom: none; }
+        
+        input[type="text"] { 
+            width: 100%; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; 
+        }
+        .btn-delete { color: var(--danger); border: none; background: none; font-weight: bold; }
+        .btn-delete:hover { color: #991b1b; text-decoration: underline; }
+        
+        a { color: var(--primary); text-decoration: none; font-weight: 500; }
+        a:hover { text-decoration: underline; }
+
+        /* New Features Styling */
+        .search-container { margin-bottom: 15px; }
+        .search-container input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .sortable { cursor: pointer; position: relative; }
+        .sortable:hover { background: #e2e8f0; }
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .status-completed { background: #dcfce7; color: #166534; }
+        .status-in-progress { background: #fef9c3; color: #854d0e; }
+        .status-archived { background: #f1f5f9; color: #475569; }
+        .thumbnail-preview { display: none; position: absolute; z-index: 10; width: 120px; border: 2px solid white; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-top: 5px; }
+        .title-cell { position: relative; }
+        .title-cell:hover .thumbnail-preview { display: block; }
+    </style>
 </head>
 <body>
-    <h2>Project Dashboard</h2>
+
+<div class="container">
+    <div class="header">
+        <h1>Project Dashboard</h1>
+        <button id="auth-btn" onclick="handleAuthClick()">Admin Login</button>
+    </div>
+
+    <div id="admin-panel">
+        <div class="admin-controls">
+            <strong>Admin Mode:</strong>
+            <button onclick="addNewProject()" style="background: #059669; color: white; border: none;">+ Add Project</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
 
     <div id="year-buttons" class="year-selector">
         </div>
 
-    <div id="project-table-container">
-        <h3 id="selected-year-title">Select a Year</h3>
+    <div id="content-area">
+        <div class="header">
+            <h2 id="current-year-label">Loading...</h2>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search by title..." oninput="handleSearch(this.value)">
+            </div>
+        </div>
         <table id="project-table">
             <thead>
                 <tr>
-                    <th>Project</th>
-                    <th>Location</th>
-                    <th>File</th>
+                    <th class="sortable" onclick="handleSort('title')">Title ↕</th>
+                    <th class="sortable" onclick="handleSort('location')">Location ↕</th>
+                    <th>Status</th>
+                    <th>File Link</th>
+                    <th class="admin-only" style="display:none;">Actions</th>
                 </tr>
             </thead>
             <tbody id="table-body">
                 </tbody>
         </table>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // 1. Initialize Supabase (Get these from your Supabase Project Settings > API)
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<script>
+    // --- CONFIGURATION ---
+    const SUPABASE_URL = 'https://otqxzgbjumsasmfdotia.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90cXh6Z2JqdW1zYXNtZmRvdGlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTkyNzgsImV4cCI6MjA5MTk5NTI3OH0.KYVnaM3rqGxCj2sduiIoEhCuedwuYn9HZUvgqD0VNL4';
+    const ADMIN_PASSWORD = 'brybry'; // Change this!
 
-        let allData = [];
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    let allData = [];
+    let currentYear = null;
+    let isAdmin = false;
+    let searchQuery = '';
+    let sortCol = 'title';
+    let sortDir = 'asc';
 
-        async function fetchData() {
-            const { data, error } = await supabase
-                .from('projects')
-                .select('*')
-                .order('year', { ascending: false });
+    // --- INITIALIZATION ---
+    async function init() {
+        await fetchData();
+    }
 
-            if (error) console.error('Error fetching:', error);
-            else {
-                allData = data;
-                renderYearButtons();
-            }
-        }
+    async function fetchData() {
+        const { data, error } = await supabaseClient
+            .from('projects')
+            .select('*')
+            .order('year', { ascending: false });
 
-        function renderYearButtons() {
-            const container = document.getElementById('year-buttons');
+        if (error) {
+            console.error('Fetch error:', error);
+            document.getElementById('current-year-label').innerText = "Error loading data.";
+        } else {
+            allData = data;
             const years = [...new Set(allData.map(item => item.year))];
-            
-            container.innerHTML = years.map(year => 
-                `<button onclick="displayYear('${year}')">${year}</button>`
-            ).join('');
-            
-            if(years.length > 0) displayYear(years[0]); // Show latest by default
+            renderYearButtons(years);
+            if (!currentYear && years.length > 0) currentYear = years[0];
+            renderTable();
         }
+    }
 
-        function displayYear(year) {
-            document.getElementById('selected-year-title').innerText = `Projects - ${year}`;
-            const filtered = allData.filter(item => item.year == year);
-            const tbody = document.getElementById('table-body');
-            
-            tbody.innerHTML = filtered.map(item => `
-                <tr>
-                    <td>${item.title}</td>
-                    <td>${item.location}</td>
-                    <td><a href="${item.file_link}" target="_blank">View File</a></td>
-                </tr>
-            `).join('');
+    // --- RENDERING ---
+    function renderYearButtons(years) {
+        const container = document.getElementById('year-buttons');
+        container.innerHTML = years.map(y => `
+            <button class="${y === currentYear ? 'active' : ''}" onclick="switchYear('${y}')">${y}</button>
+        `).join('');
+    }
+
+    function renderTable() {
+        document.getElementById('current-year-label').innerText = `Year: ${currentYear || 'N/A'}`;
+        const tbody = document.getElementById('table-body');
+        
+        let filtered = allData.filter(item => 
+            item.year == currentYear && 
+            item.title.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+
+        filtered.sort((a, b) => {
+            let valA = (a[sortCol] || '').toString().toLowerCase();
+            let valB = (b[sortCol] || '').toString().toLowerCase();
+            return sortDir === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        });
+
+        tbody.innerHTML = filtered.map(item => `
+            <tr>
+                <td class="title-cell">
+                    ${isAdmin ? `<input type="text" value="${item.title}" onchange="updateItem(${item.id}, 'title', this.value)">` : item.title}
+                    ${isImage(item.file_link) ? `<img src="${item.file_link}" class="thumbnail-preview">` : ''}
+                </td>
+                <td>${isAdmin ? `<input type="text" value="${item.location}" onchange="updateItem(${item.id}, 'location', this.value)">` : item.location}</td>
+                <td>
+                    ${isAdmin ? 
+                        `<input type="text" value="${item.status || 'In Progress'}" onchange="updateItem(${item.id}, 'status', this.value)">` : 
+                        `<span class="status-badge ${getStatusClass(item.status)}">${item.status || 'In Progress'}</span>`
+                    }
+                </td>
+                <td>
+                    ${isAdmin ? 
+                        `<input type="text" value="${item.file_link}" onchange="updateItem(${item.id}, 'file_link', this.value)">` : 
+                        `<a href="${item.file_link}" target="_blank">View File</a>`}
+                </td>
+                <td class="admin-only" style="${isAdmin ? '' : 'display:none'}">
+                    <button class="btn-delete" onclick="deleteItem(${item.id})">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+
+        // Toggle admin column visibility
+        document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'table-cell' : 'none');
+    }
+
+    function handleSearch(val) {
+        searchQuery = val;
+        renderTable();
+    }
+
+    function handleSort(col) {
+        if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        else { sortCol = col; sortDir = 'asc'; }
+        renderTable();
+    }
+
+    function switchYear(year) {
+        currentYear = year;
+        const years = [...new Set(allData.map(item => item.year))];
+        renderYearButtons(years);
+        renderTable();
+    }
+
+    function getStatusClass(status) {
+        const statusMap = {
+            'completed': 'status-completed',
+            'archived': 'status-archived',
+            'in progress': 'status-in-progress'
+        };
+        const s = (status || '').toLowerCase();
+        return statusMap[s] || 'status-in-progress';
+    }
+
+    function isImage(url) {
+        return url && (url.match(/\.(jpeg|jpg|gif|png)$/) != null);
+    }
+
+    // --- ADMIN ACTIONS ---
+    function handleAuthClick() {
+        if (isAdmin) { logout(); return; }
+        const pass = prompt("Enter Admin Password:");
+        if (pass === ADMIN_PASSWORD) {
+            isAdmin = true;
+            document.getElementById('admin-panel').style.display = 'block';
+            document.getElementById('auth-btn').innerText = "Exit Admin";
+            renderTable();
+        } else if (pass !== null) {
+            alert("Wrong password.");
         }
+    }
 
-        fetchData();
-    </script>
+    function logout() {
+        isAdmin = false;
+        document.getElementById('admin-panel').style.display = 'none';
+        document.getElementById('auth-btn').innerText = "Admin Login";
+        renderTable();
+    }
+
+    async function updateItem(id, field, value) {
+        const { error } = await supabaseClient.from('projects').update({ [field]: value }).eq('id', id);
+        if (error) {
+            alert("Save failed: " + error.message);
+        } else {
+            // Sync local data so searching/sorting doesn't overwrite unsaved UI changes
+            const item = allData.find(i => i.id === id);
+            if (item) item[field] = value;
+        }
+    }
+
+    async function deleteItem(id) {
+        if (!confirm("Are you sure you want to delete this project?")) return;
+        const { error } = await supabaseClient.from('projects').delete().eq('id', id);
+        if (error) alert("Delete failed");
+        else await fetchData();
+    }
+
+    async function addNewProject() {
+        const year = prompt("Enter Year for new project:", currentYear || 2026);
+        if (!year) return;
+        
+        const { error } = await supabaseClient.from('projects').insert([
+            { year: year, title: 'New Title', location: 'Location', file_link: '#', status: 'In Progress' }
+        ]);
+        
+        if (error) alert("Insert failed");
+        else {
+            currentYear = year;
+            await fetchData();
+        }
+    }
+
+    // Start
+    init();
+</script>
+
 </body>
 </html>
