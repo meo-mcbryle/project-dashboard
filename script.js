@@ -105,25 +105,14 @@ function renderTable() {
     tbody.innerHTML = filtered.map(item => `
         <tr>
             <td class="title-cell col-title" title="${item.title}">
-                ${isAdmin ? 
-                    `<input type="text" value="${item.title}" onchange="updateItem(${item.id}, 'title', this.value)">` : 
-                    `<strong>${item.title}</strong>`}
+                <strong>${item.title}</strong>
                 ${getFirstImage(parseFiles(item.file_link)) ? `<img src="${getFirstImage(parseFiles(item.file_link)).url}" alt="Preview" class="thumbnail-preview">` : ''}
             </td>
             <td class="col-location" title="${item.location}">
-                ${isAdmin ? 
-                    `<input type="text" value="${item.location}" onchange="updateItem(${item.id}, 'location', this.value)">` : 
-                    `<span class="location-text">${item.location}</span>`}
+                <span class="location-text">${item.location}</span>
             </td>
             <td class="col-status">
-                ${isAdmin ? 
-                    `<select onchange="updateItem(${item.id}, 'status', this.value)">
-                        ${STATUS_OPTIONS.map(opt => `
-                            <option value="${opt}" ${ (item.status || 'In Progress') === opt ? 'selected' : ''}>${opt}</option>
-                        `).join('')}
-                    </select>` : 
-                    `<span class="status-badge ${getStatusClass(item.status)}">${item.status || 'In Progress'}</span>`
-                }
+                <span class="status-badge ${getStatusClass(item.status)}">${item.status || 'In Progress'}</span>
             </td>
             <td class="col-files">
                 ${(parseFiles(item.file_link).length > 0 || isAdmin) ? 
@@ -134,6 +123,7 @@ function renderTable() {
                 }
             </td>
             <td class="admin-only col-admin" style="${isAdmin ? '' : 'display:none'}">
+                <button class="btn-edit" onclick="openEditModal(${item.id})">Edit</button>
                 <button class="btn-delete" onclick="deleteItem(${item.id})">Delete</button>
             </td>
         </tr>
@@ -300,6 +290,47 @@ function closeModal() {
     document.getElementById('modal-file-upload').value = ''; // Reset input
     document.getElementById('modal-url-upload').value = ''; // Reset input
     renderTable(); // Sync main table
+}
+
+function openEditModal(projectId) {
+    activeModalProjectId = projectId;
+    const project = allData.find(p => p.id === projectId);
+    if (!project) return;
+
+    document.getElementById('edit-proj-title').value = project.title || '';
+    document.getElementById('edit-proj-location').value = project.location || '';
+    document.getElementById('edit-proj-year').value = project.year || new Date().getFullYear();
+    
+    const statusSelect = document.getElementById('edit-proj-status');
+    statusSelect.innerHTML = STATUS_OPTIONS.map(opt => `
+        <option value="${opt}" ${ (project.status || 'In Progress') === opt ? 'selected' : ''}>${opt}</option>
+    `).join('');
+
+    document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+    activeModalProjectId = null;
+}
+
+async function handleEditSave() {
+    const id = activeModalProjectId;
+    const updates = {
+        title: document.getElementById('edit-proj-title').value.trim(),
+        location: document.getElementById('edit-proj-location').value.trim(),
+        year: parseInt(document.getElementById('edit-proj-year').value),
+        status: document.getElementById('edit-proj-status').value
+    };
+
+    const { error } = await supabaseClient.from('projects').update(updates).eq('id', id);
+    if (error) return alert("Save failed: " + error.message);
+
+    const itemIndex = allData.findIndex(i => i.id === id);
+    if (itemIndex !== -1) allData[itemIndex] = { ...allData[itemIndex], ...updates };
+    
+    closeEditModal();
+    renderTable();
 }
 
 // --- ADMIN ACTIONS ---
