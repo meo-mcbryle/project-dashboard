@@ -121,9 +121,9 @@ function renderTable() {
                 }
             </td>
             <td>
-                ${parseFiles(item.file_link).length > 0 ? 
+                ${(parseFiles(item.file_link).length > 0 || isAdmin) ? 
                     `<button class="btn-view-files" onclick="openFileModal(${item.id})">
-                        View Files (${parseFiles(item.file_link).length})
+                        ${parseFiles(item.file_link).length > 0 ? `View Files (${parseFiles(item.file_link).length})` : '+ Add Files'}
                      </button>` : 
                     `<span style="color:var(--text-muted); font-size:0.875rem">No files attached</span>`
                 }
