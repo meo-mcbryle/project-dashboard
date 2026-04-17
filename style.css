@@ -175,4 +175,8 @@ a:hover { text-decoration: underline; }
     white-space: nowrap;
     display: inline-block;
 }
+<<<<<<< HEAD
 .btn-view-files:hover { background: #e2e8f0; border-color: #cbd5e1; }
+=======
+.btn-view-files:hover { background: #e2e8f0; border-color: #cbd5e1; }
+>>>>>>> 57fb6bdfb847b5655f08fb3498a57b60ad6aadc2
