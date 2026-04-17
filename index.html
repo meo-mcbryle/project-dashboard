@@ -260,14 +260,21 @@
     }
 
     async function addNewProject() {
-        const year = prompt("Enter Year for new project:", currentYear || 2026);
-        if (!year) return;
+        const yearInput = prompt("Enter Year for new project:", currentYear || 2026);
+        if (!yearInput) return;
+
+        // Ensure year is a number
+        const year = parseInt(yearInput);
+        if (isNaN(year)) {
+            alert("Please enter a valid number for the year.");
+            return;
+        }
         
         const { error } = await supabaseClient.from('projects').insert([
             { year: year, title: 'New Title', location: 'Location', file_link: '#', status: 'In Progress' }
         ]);
         
-        if (error) alert("Insert failed");
+        if (error) alert("Insert failed: " + error.message);
         else {
             currentYear = year;
             await fetchData();
