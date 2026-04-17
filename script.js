@@ -282,12 +282,16 @@ function renderModalFiles() {
         return;
     }
 
-    listContainer.innerHTML = files.map((file) => `
-        <div class="file-item">
-            <a href="${file.url}" target="_blank">${file.name}</a>
-            ${isAdmin ? `<button class="btn-remove-file" onclick="removeFile(${project.id}, '${file.url}')">&times;</button>` : ''}
-        </div>
-    `).join('');
+    listContainer.innerHTML = files.map((file) => {
+        const isExternal = !file.url.includes(SUPABASE_URL);
+        return `
+            <div class="file-item">
+                ${isExternal ? `<span class="link-badge">Link</span>` : ''}
+                <a href="${file.url}" target="_blank">${file.name}</a>
+                ${isAdmin ? `<button class="btn-remove-file" onclick="removeFile(${project.id}, '${file.url}')">&times;</button>` : ''}
+            </div>
+        `;
+    }).join('');
 }
 
 function closeModal() {
