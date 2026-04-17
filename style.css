@@ -53,10 +53,10 @@ tr:last-child td { border-bottom: none; }
 
 .title-cell strong { display: block; color: var(--text-main); font-size: 0.95rem; }
 
-input[type="text"], select { 
+input[type="text"], input[type="number"], select { 
     width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.875rem; outline: none; transition: all 0.2s;
 }
-input[type="text"]:focus, select:focus { border-color: var(--primary); ring: 2px solid rgba(37,99,235,0.1); }
+input[type="text"]:focus, input[type="number"]:focus, select:focus { border-color: var(--primary); ring: 2px solid rgba(37,99,235,0.1); }
 
 .btn-delete { color: var(--danger); border: none; background: none; font-weight: bold; }
 .btn-delete:hover { color: #991b1b; text-decoration: underline; }

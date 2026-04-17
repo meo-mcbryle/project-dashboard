@@ -200,6 +200,62 @@ function showConfirm(message) {
     });
 }
 
+function showAddProjectModal() {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal'; 
+        overlay.style.display = 'flex';
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal-content';
+        modal.style.maxWidth = '450px';
+
+        modal.innerHTML = `
+            <div class="modal-header">
+                <h3>Create New Project</h3>
+                <button class="close-modal" id="add-proj-close">&times;</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label style="display:block; margin-bottom:6px; font-weight:600; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Project Title</label>
+                    <input type="text" id="add-proj-title" placeholder="e.g. Modern Residential Complex" required>
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:6px; font-weight:600; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Location</label>
+                    <input type="text" id="add-proj-location" placeholder="e.g. Austin, TX" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <label style="display:block; margin-bottom:6px; font-weight:600; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Year</label>
+                        <input type="number" id="add-proj-year" value="${new Date().getFullYear()}" required>
+                    </div>
+                    <div>
+                        <label style="display:block; margin-bottom:6px; font-weight:600; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Initial Status</label>
+                        <select id="add-proj-status">
+                            ${STATUS_OPTIONS.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; padding-top: 20px; border-top: 1px solid var(--border);">
+                    <button id="add-proj-cancel" style="padding: 10px 18px; color: var(--text-muted);">Cancel</button>
+                    <button id="add-proj-confirm" style="padding: 10px 18px; background:var(--primary); color:white; border-radius: 8px;">Create Project</button>
+                </div>
+            </div>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        const done = (res) => { document.body.removeChild(overlay); resolve(res); };
+        document.getElementById('add-proj-close').onclick = () => done(null);
+        document.getElementById('add-proj-cancel').onclick = () => done(null);
+        document.getElementById('add-proj-confirm').onclick = () => {
+            const data = { title: document.getElementById('add-proj-title').value.trim(), location: document.getElementById('add-proj-location').value.trim(), year: parseInt(document.getElementById('add-proj-year').value), status: document.getElementById('add-proj-status').value };
+            if (!data.title || !data.location || isNaN(data.year)) return alert("Please fill in all fields.");
+            done(data);
+        };
+    });
+}
+
 function openFileModal(projectId) {
     activeModalProjectId = projectId;
     const project = allData.find(p => p.id === projectId);
@@ -356,20 +412,17 @@ async function deleteItem(id) {
 }
 
 async function addNewProject() {
-    const yearInput = prompt("Enter Year for new project:", currentYear || 2026);
-    if (!yearInput) return;
-    const year = parseInt(yearInput);
-    if (isNaN(year)) {
-        alert("Please enter a valid number for the year.");
-        return;
-    }
-    const newProject = { year: year, title: 'New Title', location: 'Location', file_link: '[]', status: 'In Progress' };
+    const projectData = await showAddProjectModal();
+    if (!projectData) return;
+
+    const confirmed = await showConfirm(`Confirm creating project "${projectData.title}" for ${projectData.year}?`);
+    if (!confirmed) return;
+
+    const newProject = { ...projectData, file_link: '[]' };
     const { error } = await supabaseClient.from('projects').insert([newProject]);
-    if (error) {
-        alert(`Insert failed: ${error.message}`);
-        return;
-    }
-    currentYear = year;
+    
+    if (error) return alert(`Insert failed: ${error.message}`);
+    currentYear = projectData.year;
     await fetchData();
 }
 
