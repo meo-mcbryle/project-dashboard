@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Project Dashboard</title>
+</head>
+<body>
+    <h2>Project Dashboard</h2>
+
+    <div id="year-buttons" class="year-selector">
+        </div>
+
+    <div id="project-table-container">
+        <h3 id="selected-year-title">Select a Year</h3>
+        <table id="project-table">
+            <thead>
+                <tr>
+                    <th>Project</th>
+                    <th>Location</th>
+                    <th>File</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                </tbody>
+        </table>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 1. Initialize Supabase (Get these from your Supabase Project Settings > API)
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let allData = [];
+
+        async function fetchData() {
+            const { data, error } = await supabase
+                .from('projects')
+                .select('*')
+                .order('year', { ascending: false });
+
+            if (error) console.error('Error fetching:', error);
+            else {
+                allData = data;
+                renderYearButtons();
+            }
+        }
+
+        function renderYearButtons() {
+            const container = document.getElementById('year-buttons');
+            const years = [...new Set(allData.map(item => item.year))];
+            
+            container.innerHTML = years.map(year => 
+                `<button onclick="displayYear('${year}')">${year}</button>`
+            ).join('');
+            
+            if(years.length > 0) displayYear(years[0]); // Show latest by default
+        }
+
+        function displayYear(year) {
+            document.getElementById('selected-year-title').innerText = `Projects - ${year}`;
+            const filtered = allData.filter(item => item.year == year);
+            const tbody = document.getElementById('table-body');
+            
+            tbody.innerHTML = filtered.map(item => `
+                <tr>
+                    <td>${item.title}</td>
+                    <td>${item.location}</td>
+                    <td><a href="${item.file_link}" target="_blank">View File</a></td>
+                </tr>
+            `).join('');
+        }
+
+        fetchData();
+    </script>
+</body>
+</html>
