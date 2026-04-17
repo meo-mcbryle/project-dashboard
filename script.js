@@ -171,7 +171,7 @@ function isImage(url) {
 }
 
 // --- MODAL LOGIC ---
-function showConfirm(message) {
+function showConfirm(message, okText = 'Delete', okColor = '#e74c3c') {
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
         overlay.style.cssText = `
@@ -189,7 +189,7 @@ function showConfirm(message) {
             <p style="margin-bottom: 24px; font-size: 1.1rem; color: #333;">${message}</p>
             <div style="display: flex; justify-content: center; gap: 12px;">
                 <button id="conf-cancel" style="padding: 10px 20px; border: 1px solid #ddd; background: #f8f9fa; border-radius: 6px; cursor: pointer; font-weight: 500;">Cancel</button>
-                <button id="conf-ok" style="padding: 10px 20px; border: none; background: #e74c3c; color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">Delete</button>
+                <button id="conf-ok" style="padding: 10px 20px; border: none; background: ${okColor}; color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">${okText}</button>
             </div>
         `;
         overlay.appendChild(modal);
@@ -360,7 +360,7 @@ async function handleModalUpload(event) {
 }
 
 async function removeFile(projectId, fileUrl) {
-    const confirmed = await showConfirm("Are you sure you want to remove this specific file?");
+    const confirmed = await showConfirm("Are you sure you want to remove this specific file?", "Remove", "#e74c3c");
     if (!confirmed) return;
 
     const item = allData.find(i => i.id === projectId);
@@ -385,7 +385,7 @@ async function removeFile(projectId, fileUrl) {
 }
 
 async function deleteItem(id) {
-    const confirmed = await showConfirm("Are you sure you want to delete this project?");
+    const confirmed = await showConfirm("Are you sure you want to delete this project?", "Delete", "#e74c3c");
     if (!confirmed) return;
 
     // 1. Find the project and all associated files
@@ -415,7 +415,7 @@ async function addNewProject() {
     const projectData = await showAddProjectModal();
     if (!projectData) return;
 
-    const confirmed = await showConfirm(`Confirm creating project "${projectData.title}" for ${projectData.year}?`);
+    const confirmed = await showConfirm(`Confirm creating project "${projectData.title}" for ${projectData.year}?`, "Confirm", "#2563eb");
     if (!confirmed) return;
 
     const newProject = { ...projectData, file_link: '[]' };
