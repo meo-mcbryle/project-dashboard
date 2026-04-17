@@ -293,6 +293,7 @@ function closeModal() {
     document.getElementById('file-modal').style.display = 'none';
     activeModalProjectId = null;
     document.getElementById('modal-file-upload').value = ''; // Reset input
+    document.getElementById('modal-url-upload').value = ''; // Reset input
     renderTable(); // Sync main table
 }
 
@@ -360,6 +361,35 @@ async function handleModalUpload(event) {
     await updateItem(id, 'file_link', JSON.stringify(currentFiles));
     
     // Refresh both UI layers
+    renderModalFiles();
+}
+
+async function handleAddUrl() {
+    const urlInput = document.getElementById('modal-url-upload');
+    const url = urlInput.value.trim();
+    const id = activeModalProjectId;
+    
+    if (!url) return;
+    
+    try {
+        new URL(url);
+    } catch (e) {
+        alert("Please enter a valid URL.");
+        return;
+    }
+
+    const item = allData.find(i => i.id === id);
+    const currentFiles = parseFiles(item ? item.file_link : null);
+
+    // Extract a name from the URL path if possible
+    let name = "External Link";
+    const filename = url.split('/').pop().split('?')[0];
+    if (filename && filename.includes('.')) name = decodeURIComponent(filename);
+
+    currentFiles.push({ name, url });
+    await updateItem(id, 'file_link', JSON.stringify(currentFiles));
+    
+    urlInput.value = '';
     renderModalFiles();
 }
 

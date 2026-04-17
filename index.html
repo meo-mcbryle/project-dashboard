@@ -60,8 +60,14 @@
         </div>
         <div id="modal-file-list" class="file-list"></div>
         <div id="modal-admin-section" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); display: none;">
-            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Upload New Attachment</label>
-            <input type="file" id="modal-file-upload" onchange="handleModalUpload(event)" style="font-size: 0.875rem;">
+            <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Add Attachment</label>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <input type="file" id="modal-file-upload" onchange="handleModalUpload(event)" style="font-size: 0.875rem;">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="modal-url-upload" placeholder="Or paste a file URL..." style="width: auto; flex-grow: 1;">
+                    <button onclick="handleAddUrl()" style="background: var(--primary); color: white; border: none; padding: 0 16px; border-radius: 6px; font-weight: 600; flex-shrink: 0;">Link</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
