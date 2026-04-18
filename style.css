@@ -70,7 +70,8 @@ table {
 }
 th, td { text-align: left; padding: 16px 15px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
 th { background: #f8fafc; font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; color: var(--text-muted); position: sticky; top: 0; z-index: 10; }
-tr:hover td { background: #f8fafc; transition: background 0.1s ease; }
+tr:hover td { background: #f8fafc; }
+tr:hover { position: relative; z-index: 105; transition: background 0.1s ease; }
 tr:last-child td { border-bottom: none; }
 
 /* Column Widths */
@@ -146,6 +147,16 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus, input[type="
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%) translateY(0);
+}
+
+/* Prevent tooltips in the last column from being clipped by the right container edge */
+.col-admin .btn-action::after {
+    left: auto;
+    right: 0;
+    transform: translateX(0) translateY(5px);
+}
+.col-admin .btn-action:hover::after {
+    transform: translateX(0) translateY(0);
 }
 
 a { color: var(--primary); text-decoration: none; font-weight: 600; font-size: 0.875rem; }

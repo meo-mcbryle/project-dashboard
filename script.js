@@ -88,12 +88,12 @@ async function fetchData() {
         return;
     } else {
         allData = data;
-        const years = [...new Set(allData.map(item => item.year))];
+        const years = [...new Set(allData.map(item => item.year))].sort((a, b) => b - a);
 
         if (years.length > 0) {
             // If no year is selected, or the selected year doesn't exist in the data anymore, default to the latest
             if (currentYear === null || !years.includes(currentYear)) {
-                currentYear = parseInt(years[0]);
+                currentYear = years[0];
             }
         }
 
@@ -237,7 +237,7 @@ function switchYear(year) {
     lastUpdatedId = null; // Clear highlight on year switch
     currentYear = parseInt(year);
     localStorage.setItem('selectedYear', currentYear);
-    const years = [...new Set(allData.map(item => item.year))];
+    const years = [...new Set(allData.map(item => item.year))].sort((a, b) => b - a);
     renderYearButtons(years);
     renderTable(true);
 }
@@ -449,6 +449,7 @@ async function handleCreateSave() {
 
 async function handleEditSave() {
     const id = activeModalProjectId;
+    const oldProject = allData.find(p => p.id === id);
     const updates = {
         title: document.getElementById('edit-proj-title').value.trim(),
         location: document.getElementById('edit-proj-location').value.trim(),
@@ -459,11 +460,18 @@ async function handleEditSave() {
     const { error } = await supabaseClient.from('projects').update(updates).eq('id', id);
     if (error) return alert("Save failed: " + error.message);
 
-    const itemIndex = allData.findIndex(i => i.id === id);
-    if (itemIndex !== -1) allData[itemIndex] = { ...allData[itemIndex], ...updates };
-    
-    lastUpdatedId = id; // Trigger highlight
-    closeEditModal();
+    // If the year changed, we follow the project to the new year view
+    if (oldProject && oldProject.year !== updates.year) {
+        currentYear = updates.year;
+        lastUpdatedId = id;
+        closeEditModal();
+        await fetchData(); // Full refresh ensures year list and order are perfect
+    } else {
+        const itemIndex = allData.findIndex(i => i.id === id);
+        if (itemIndex !== -1) allData[itemIndex] = { ...allData[itemIndex], ...updates };
+        lastUpdatedId = id;
+        closeEditModal();
+    }
     showToast("Changes saved successfully!");
 }
 
