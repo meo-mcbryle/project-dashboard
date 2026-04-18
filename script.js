@@ -12,6 +12,7 @@ let isAdmin = false;
 let searchQuery = '';
 let sortCol = 'title';
 let sortDir = 'asc';
+let searchTimeout;
 
 const STATUS_OPTIONS = ['In Progress', 'Completed', 'Archived'];
 let activeModalProjectId = null;
@@ -80,6 +81,17 @@ function renderTable() {
     const label = document.getElementById('current-year-label');
     if (label) label.innerText = `Year: ${currentYear || 'N/A'}`;
     
+    // Update Sort Headers UI
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.classList.remove('active-sort');
+        th.querySelector('.sort-icon').innerText = '↕';
+    });
+    const activeTh = document.getElementById(`th-${sortCol}`);
+    if (activeTh) {
+        activeTh.classList.add('active-sort');
+        activeTh.querySelector('.sort-icon').innerText = sortDir === 'asc' ? '↑' : '↓';
+    }
+
     const tbody = document.getElementById('table-body');
     if (!tbody) return;
     
@@ -102,11 +114,17 @@ function renderTable() {
         return;
     }
 
-    tbody.innerHTML = filtered.map(item => `
+    tbody.innerHTML = filtered.map(item => {
+        // Pre-parse files once per row to optimize performance
+        const files = parseFiles(item.file_link);
+        const fileCount = files.length;
+        const previewImg = getFirstImage(files);
+
+        return `
         <tr>
             <td class="title-cell col-title" title="${item.title}">
                 <strong>${item.title}</strong>
-                ${getFirstImage(parseFiles(item.file_link)) ? `<img src="${getFirstImage(parseFiles(item.file_link)).url}" alt="Preview" class="thumbnail-preview">` : ''}
+                ${previewImg ? `<img src="${previewImg.url}" alt="Preview" class="thumbnail-preview">` : ''}
             </td>
             <td class="col-location" title="${item.location}">
                 <span class="location-text">${item.location}</span>
@@ -115,26 +133,26 @@ function renderTable() {
                 <span class="status-badge ${getStatusClass(item.status)}">${item.status || 'In Progress'}</span>
             </td>
             <td class="col-files">
-                ${(parseFiles(item.file_link).length > 0 || isAdmin) ? 
+                ${(fileCount > 0 || isAdmin) ? 
                     `<button class="btn-view-files" onclick="openFileModal(${item.id})">
-                        ${parseFiles(item.file_link).length > 0 ? `View Files (${parseFiles(item.file_link).length})` : '+ Add Files'}
+                        ${fileCount > 0 ? `View Files (${fileCount})` : '+ Add Files'}
                      </button>` : 
                     `<span style="color:var(--text-muted); font-size:0.875rem">No files attached</span>`
                 }
             </td>
             <td class="admin-only col-admin" style="${isAdmin ? '' : 'display:none'}">
                 <div class="action-wrapper">
-                    <button class="btn-action edit" onclick="openEditModal(${item.id})" data-tooltip="Edit Project" aria-label="Edit Project">
+                    <button class="btn-action edit" onclick="openEditModal(${item.id})" data-tooltip="Edit" aria-label="Edit Project">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     </button>
                     <div class="action-divider"></div>
-                    <button class="btn-action delete" onclick="deleteItem(${item.id})" data-tooltip="Delete Project" aria-label="Delete Project">
+                    <button class="btn-action delete" onclick="deleteItem(${item.id})" data-tooltip="Delete" aria-label="Delete Project">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                 </div>
             </td>
         </tr>
-    `).join('');
+    `;}).join('');
 
     // Toggle admin column visibility
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'table-cell' : 'none');
@@ -142,7 +160,9 @@ function renderTable() {
 
 function handleSearch(val) {
     searchQuery = val;
-    renderTable();
+    clearTimeout(searchTimeout);
+    // Debounce re-render to 250ms to keep input responsive
+    searchTimeout = setTimeout(renderTable, 250);
 }
 
 function handleSort(col) {

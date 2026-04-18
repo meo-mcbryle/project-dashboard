@@ -144,6 +144,10 @@ a:hover { text-decoration: underline; }
 
 .sortable { cursor: pointer; position: relative; }
 .sortable:hover { background: #e2e8f0; }
+.sort-icon { font-size: 0.8rem; margin-left: 4px; color: var(--text-muted); opacity: 0.5; }
+th.active-sort { color: var(--primary) !important; background: #eff6ff; }
+th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
+
 .status-badge { padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
 .status-completed { background: #ecfdf5; color: #059669; }
 .status-in-progress { background: #fffbeb; color: #d97706; }

@@ -37,9 +37,9 @@
             <table id="project-table">
                 <thead>
                     <tr>
-                        <th class="col-title sortable" onclick="handleSort('title')">Title ↕</th>
-                        <th class="col-location sortable" onclick="handleSort('location')">Location ↕</th>
-                        <th class="col-status sortable" onclick="handleSort('status')">Status ↕</th>
+                        <th class="col-title sortable" id="th-title" onclick="handleSort('title')">Title <span class="sort-icon">↕</span></th>
+                        <th class="col-location sortable" id="th-location" onclick="handleSort('location')">Location <span class="sort-icon">↕</span></th>
+                        <th class="col-status sortable" id="th-status" onclick="handleSort('status')">Status <span class="sort-icon">↕</span></th>
                         <th class="col-files">File Link</th>
                         <th class="col-admin admin-only" style="display:none;">Actions</th>
                     </tr>
