@@ -236,20 +236,25 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
     backdrop-filter: blur(4px); align-items: center; justify-content: center; 
     transition: opacity 0.3s ease;
 }
+.modal.active { opacity: 1; }
+
 .modal-content { 
     background: white; padding: 32px; border-radius: 16px; 
     width: 90%; max-width: 500px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-    position: relative; animation: modalSlideUp 0.3s ease-out;
+    position: relative; 
+    opacity: 0;
+    transform: translateY(15px) scale(0.96);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
 }
-@keyframes modalSlideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+.modal.active .modal-content {
+    opacity: 1;
+    transform: translateY(0) scale(1);
 }
 
 @keyframes modalShake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-10px); }
-    40%, 80% { transform: translateX(10px); }
+    0%, 100% { transform: translateY(0) scale(1) translateX(0); }
+    20%, 60% { transform: translateY(0) scale(1) translateX(-10px); }
+    40%, 80% { transform: translateY(0) scale(1) translateX(10px); }
 }
 
 .shake {

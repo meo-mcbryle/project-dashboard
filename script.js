@@ -216,11 +216,11 @@ function toggleModal(id, show, callback) {
     if (show) {
         modal.style.display = 'flex';
         setTimeout(() => {
-            modal.style.opacity = '1';
+            modal.classList.add('active');
             if (callback) callback();
         }, 10);
     } else {
-        modal.style.opacity = '0';
+        modal.classList.remove('active');
         setTimeout(() => {
             modal.style.display = 'none';
             if (callback) callback();
