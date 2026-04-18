@@ -244,6 +244,18 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
     from { transform: translateY(20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
+
+@keyframes modalShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-10px); }
+    40%, 80% { transform: translateX(10px); }
+}
+
+.shake {
+    animation: modalShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    border: 1px solid var(--danger) !important;
+}
+
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
 .modal-header h3 { margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
 .close-modal { font-size: 1.5rem; cursor: pointer; color: var(--text-muted); border: none; background: none; }
@@ -265,7 +277,7 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
 @media (max-width: 768px) {
     body { padding: 15px 10px; }
     
-    .header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
+    .header { flex-direction: row; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
     .header h1 { font-size: 1.5rem; }
 
     .year-selector { 

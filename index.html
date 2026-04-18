@@ -51,6 +51,18 @@
     </div>
 </div>
 
+<!-- Error Modal -->
+<div id="error-modal" class="modal" style="z-index: 1100;">
+    <div class="modal-content" style="max-width: 350px; text-align: center;">
+        <div style="color: var(--danger); font-size: 3rem; margin-bottom: 10px; line-height: 1;">&times;</div>
+        <h3 style="margin-bottom: 10px; color: var(--text-main);">Authentication Failed</h3>
+        <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.875rem;">The password you entered is incorrect. Please try again.</p>
+        <button onclick="closeErrorModal()" style="padding: 12px 20px; background: var(--danger); color: white; border-radius: 8px; width: 100%; border: none; cursor: pointer; font-weight: 600; font-size: 0.875rem;">
+            Try Again
+        </button>
+    </div>
+</div>
+
 <!-- Login Modal -->
 <div id="login-modal" class="modal">
     <div class="modal-content" style="max-width: 400px;">

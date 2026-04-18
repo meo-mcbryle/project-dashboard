@@ -412,8 +412,25 @@ function handleLoginSubmit() {
         renderTable();
         closeLoginModal();
     } else {
-        alert("Wrong password.");
+        const modalContent = document.querySelector('#login-modal .modal-content');
+        modalContent.classList.add('shake');
+        
+        // Remove the class after the animation ends so it can be re-triggered
+        setTimeout(() => {
+            modalContent.classList.remove('shake');
+            showErrorModal();
+        }, 400);
     }
+}
+
+function showErrorModal() {
+    document.getElementById('error-modal').style.display = 'flex';
+}
+
+function closeErrorModal() {
+    document.getElementById('error-modal').style.display = 'none';
+    document.getElementById('admin-password-input').value = '';
+    document.getElementById('admin-password-input').focus();
 }
 
 function logout() {
