@@ -51,6 +51,26 @@
     </div>
 </div>
 
+<!-- Login Modal -->
+<div id="login-modal" class="modal">
+    <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-header">
+            <h3>Admin Login</h3>
+            <button class="close-modal" onclick="closeLoginModal()">&times;</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div>
+                <label style="display:block; margin-bottom:6px; font-weight:600; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Password</label>
+                <input type="password" id="admin-password-input" placeholder="Enter admin password" onkeyup="if(event.key === 'Enter') handleLoginSubmit()">
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; padding-top: 20px; border-top: 1px solid var(--border);">
+                <button onclick="closeLoginModal()" style="padding: 10px 18px; color: var(--text-muted);">Cancel</button>
+                <button onclick="handleLoginSubmit()" style="padding: 10px 18px; background:var(--text-main); color:white; border-radius: 8px;">Login</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Create Project Modal -->
 <div id="create-modal" class="modal">
     <div class="modal-content" style="max-width: 450px;">

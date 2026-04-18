@@ -394,13 +394,24 @@ async function handleEditSave() {
 // --- ADMIN ACTIONS ---
 function handleAuthClick() {
     if (isAdmin) { logout(); return; }
-    const pass = prompt("Enter Admin Password:");
+    document.getElementById('admin-password-input').value = '';
+    document.getElementById('login-modal').style.display = 'flex';
+    document.getElementById('admin-password-input').focus();
+}
+
+function closeLoginModal() {
+    document.getElementById('login-modal').style.display = 'none';
+}
+
+function handleLoginSubmit() {
+    const pass = document.getElementById('admin-password-input').value;
     if (pass === ADMIN_PASSWORD) {
         isAdmin = true;
         document.getElementById('admin-panel').style.display = 'block';
         document.getElementById('auth-btn').innerText = "Exit Admin";
         renderTable();
-    } else if (pass !== null) {
+        closeLoginModal();
+    } else {
         alert("Wrong password.");
     }
 }
