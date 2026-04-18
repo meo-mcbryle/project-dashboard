@@ -108,6 +108,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus, input[type="
     display: flex; align-items: center; justify-content: center; 
     color: var(--text-muted); border-radius: 4px; transition: all 0.2s;
     position: relative;
+    flex-shrink: 0;
 }
 .btn-action:hover { background: #f1f5f9; }
 .btn-action.edit:hover { color: var(--primary); }
@@ -320,10 +321,10 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
 
     .action-wrapper { 
         justify-content: flex-start; 
-        width: 100%; 
-        gap: 12px; 
+        gap: 8px; 
+        margin-left: -6px; /* Pulls the icon edge to align with project text above */
     }
     .action-divider { display: none; }
-    .btn-action { padding: 8px; margin-left: -8px; } /* Improves touch area while maintaining visual alignment */
+    .btn-action { padding: 6px; } 
     .location-text { white-space: normal; }
 }
