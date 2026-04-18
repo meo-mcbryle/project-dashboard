@@ -51,6 +51,52 @@
     </div>
 </div>
 
+<!-- Create Project Modal -->
+<div id="create-modal" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-header">
+            <h3>Create New Project</h3>
+            <button class="close-modal" onclick="closeAddModal()">&times;</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div>
+                <label style="display:block; margin-bottom:6px; font-weight:600; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Project Title</label>
+                <input type="text" id="add-proj-title" placeholder="e.g. Modern Residential Complex">
+            </div>
+            <div>
+                <label style="display:block; margin-bottom:6px; font-weight:600; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Location</label>
+                <input type="text" id="add-proj-location" placeholder="e.g. Austin, TX">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div>
+                    <label style="display:block; margin-bottom:6px; font-weight:600; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Year</label>
+                    <input type="number" id="add-proj-year">
+                </div>
+                <div>
+                    <label style="display:block; margin-bottom:6px; font-weight:600; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Status</label>
+                    <select id="add-proj-status"></select>
+                </div>
+            </div>
+            <div style="margin-top: 10px; padding-top: 20px; border-top: 1px solid var(--border);">
+                <label style="display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Attachments</label>
+                <div id="add-file-list" class="file-list" style="margin-bottom: 16px;"></div>
+                <div id="add-drop-zone" class="drop-zone" onclick="document.getElementById('add-file-upload').click()">
+                    <p><strong>Click to upload</strong> or drag and drop</p>
+                    <input type="file" id="add-file-upload" onchange="handleModalUpload(event)" style="display: none;" multiple>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                    <input type="text" id="add-url-upload" placeholder="Or paste a file URL..." style="width: auto; flex-grow: 1;">
+                    <button onclick="handleAddUrl()" style="background: var(--primary); color: white; border: none; padding: 0 16px; border-radius: 6px; font-weight: 600; flex-shrink: 0;">Link</button>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; padding-top: 20px; border-top: 1px solid var(--border);">
+                <button onclick="closeAddModal()" style="padding: 10px 18px; color: var(--text-muted);">Cancel</button>
+                <button onclick="handleCreateSave()" style="padding: 10px 18px; background:var(--primary); color:white; border-radius: 8px;">Create Project</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Edit Entry Modal -->
 <div id="edit-modal" class="modal">
     <div class="modal-content" style="max-width: 450px;">

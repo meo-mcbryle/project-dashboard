@@ -13,6 +13,7 @@ let searchQuery = '';
 let sortCol = 'title';
 let sortDir = 'asc';
 let searchTimeout;
+let newProjectPendingFiles = []; // For storing files before project exists
 
 const STATUS_OPTIONS = ['In Progress', 'Completed', 'Archived'];
 let activeModalProjectId = null;
@@ -290,9 +291,10 @@ function openFileModal(projectId) {
 }
 
 function renderModalFiles() {
-    const project = allData.find(p => p.id === activeModalProjectId);
-    const containers = [document.getElementById('modal-file-list'), document.getElementById('edit-file-list')];
-    const files = parseFiles(project ? project.file_link : '[]');
+    const isNew = activeModalProjectId === 'NEW';
+    const project = isNew ? null : allData.find(p => p.id === activeModalProjectId);
+    const containers = [document.getElementById('modal-file-list'), document.getElementById('edit-file-list'), document.getElementById('add-file-list')];
+    const files = isNew ? newProjectPendingFiles : parseFiles(project ? project.file_link : '[]');
 
     const html = files.length === 0 
         ? '<p style="text-align:center; color:var(--text-muted); font-size:0.875rem;">No files uploaded yet.</p>'
@@ -302,7 +304,7 @@ function renderModalFiles() {
             <div class="file-item">
                 ${isExternal ? `<span class="link-badge">Link</span>` : ''}
                 <a href="${file.url}" target="_blank">${file.name}</a>
-                ${isAdmin ? `<button class="btn-remove-file" onclick="removeFile(${project.id}, '${file.url}')">&times;</button>` : ''}
+                ${isAdmin ? `<button class="btn-remove-file" onclick="removeFile(${isNew ? "'NEW'" : project.id}, '${file.url}')">&times;</button>` : ''}
             </div>
         `;
     }).join('');
@@ -346,11 +348,84 @@ function closeEditModal() {
 
 function getActiveFileElements() {
     const isEditModal = document.getElementById('edit-modal').style.display === 'flex';
+    const isAddModal = document.getElementById('create-modal').style.display === 'flex';
+    if (isAddModal) {
+        return {
+            list: document.getElementById('add-file-list'),
+            urlInput: document.getElementById('add-url-upload'),
+            fileInput: document.getElementById('add-file-upload')
+        };
+    }
     return {
         list: document.getElementById(isEditModal ? 'edit-file-list' : 'modal-file-list'),
         urlInput: document.getElementById(isEditModal ? 'edit-url-upload' : 'modal-url-upload'),
         fileInput: document.getElementById(isEditModal ? 'edit-file-upload' : 'modal-file-upload')
     };
+}
+
+async function addNewProject() {
+    activeModalProjectId = 'NEW';
+    newProjectPendingFiles = [];
+    
+    document.getElementById('add-proj-title').value = '';
+    document.getElementById('add-proj-location').value = '';
+    document.getElementById('add-proj-year').value = new Date().getFullYear();
+    
+    const statusSelect = document.getElementById('add-proj-status');
+    statusSelect.innerHTML = STATUS_OPTIONS.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+
+    renderModalFiles();
+    document.getElementById('create-modal').style.display = 'flex';
+}
+
+function closeAddModal() {
+    document.getElementById('create-modal').style.display = 'none';
+    activeModalProjectId = null;
+    newProjectPendingFiles = [];
+}
+
+async function handleCreateSave() {
+    const title = document.getElementById('add-proj-title').value.trim();
+    const location = document.getElementById('add-proj-location').value.trim();
+    const year = parseInt(document.getElementById('add-proj-year').value);
+    const status = document.getElementById('add-proj-status').value;
+
+    if (!title || !location || isNaN(year)) return alert("Please fill in all required fields.");
+
+    const confirmed = await showConfirm(`Create project "${title}"?`, "Confirm", "#2563eb");
+    if (!confirmed) return;
+
+    // 1. Insert Initial Project
+    const { data, error } = await supabaseClient.from('projects').insert([{ title, location, year, status, file_link: '[]' }]).select();
+    if (error) return alert("Creation failed: " + error.message);
+    
+    const newId = data[0].id;
+    const finalFiles = [];
+
+    // 2. Process pending files (Upload physical files, pass through links)
+    for (const item of newProjectPendingFiles) {
+        if (item.file) {
+            const fileExt = item.file.name.split('.').pop();
+            const fileName = `${newId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const { error: uploadError } = await supabaseClient.storage.from(BUCKET_NAME).upload(fileName, item.file);
+            
+            if (!uploadError) {
+                const { data: { publicUrl } } = supabaseClient.storage.from(BUCKET_NAME).getPublicUrl(fileName);
+                finalFiles.push({ name: item.name, url: publicUrl });
+            }
+        } else {
+            finalFiles.push(item);
+        }
+    }
+
+    // 3. Update with final file list
+    if (finalFiles.length > 0) {
+        await supabaseClient.from('projects').update({ file_link: JSON.stringify(finalFiles) }).eq('id', newId);
+    }
+
+    currentYear = year;
+    closeAddModal();
+    await fetchData();
 }
 
 async function handleEditSave() {
@@ -404,7 +479,7 @@ async function updateItem(id, field, value) {
 }
 
 function initDropZone() {
-    const zones = [document.getElementById('drop-zone'), document.getElementById('edit-drop-zone')];
+    const zones = [document.getElementById('drop-zone'), document.getElementById('edit-drop-zone'), document.getElementById('add-drop-zone')];
     
     zones.forEach(dz => {
         if (!dz) return;
@@ -436,6 +511,17 @@ async function handleModalUpload(event) {
 async function uploadFiles(files) {
     const id = activeModalProjectId;
     if (!id || files.length === 0) return;
+
+    // Special handling for New Project: Don't upload yet, just queue
+    if (id === 'NEW') {
+        files.forEach(file => {
+            // Create a preview URL for internal use in the modal
+            const tempUrl = URL.createObjectURL(file);
+            newProjectPendingFiles.push({ name: file.name, url: tempUrl, file: file });
+        });
+        renderModalFiles();
+        return;
+    }
     
     const { list: listContainer } = getActiveFileElements();
     const item = allData.find(i => i.id === id);
@@ -501,6 +587,13 @@ async function handleAddUrl() {
     const id = activeModalProjectId;
     
     if (!url) return;
+
+    if (id === 'NEW') {
+        newProjectPendingFiles.push({ name: url.split('/').pop() || "Link", url: url });
+        urlInput.value = '';
+        renderModalFiles();
+        return;
+    }
     
     try {
         new URL(url);
@@ -529,6 +622,13 @@ async function removeFile(projectId, fileUrl) {
     if (!confirmed) return;
 
     const item = allData.find(i => i.id === projectId);
+    
+    if (projectId === 'NEW') {
+        newProjectPendingFiles = newProjectPendingFiles.filter(f => f.url !== fileUrl);
+        renderModalFiles();
+        return;
+    }
+
     if (!item) return;
 
     const currentFiles = parseFiles(item.file_link);
