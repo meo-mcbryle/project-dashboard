@@ -259,3 +259,65 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
     display: inline-block;
 }
 .btn-view-files:hover { background: #e2e8f0; border-color: #cbd5e1; }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    body { padding: 15px 10px; }
+    
+    .header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
+    .header h1 { font-size: 1.5rem; }
+
+    .year-selector { 
+        width: 100%; 
+        overflow-x: auto; 
+        white-space: nowrap; 
+        padding: 6px;
+        display: block;
+        scrollbar-width: none;
+    }
+    .year-selector::-webkit-scrollbar { display: none; }
+    .year-selector button { display: inline-block; }
+
+    /* Transform Table to Cards */
+    .table-container { border: none; box-shadow: none; background: transparent; }
+    table, thead, tbody, th, td, tr { display: block; }
+    
+    thead { display: none; } /* Hide headers on mobile */
+
+    tr { 
+        background: var(--card); 
+        margin-bottom: 12px; 
+        border-radius: 10px; 
+        border: 1px solid var(--border);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        padding: 6px 0;
+    }
+
+    td { 
+        border: none; 
+        border-bottom: 1px solid #f1f5f9; 
+        position: relative; 
+        padding: 10px 12px 10px 35% !important; 
+        text-align: left !important; 
+        width: 100% !important;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    td:last-child { border-bottom: none; }
+
+    /* Create labels using data-label attribute */
+    td::before {
+        content: attr(data-label);
+        position: absolute; 
+        left: 12px;
+        width: 30%;
+        font-weight: 600;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .action-wrapper { justify-content: flex-start; }
+    .location-text { white-space: normal; }
+}
