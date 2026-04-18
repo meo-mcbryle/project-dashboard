@@ -14,6 +14,7 @@ let sortCol = 'title';
 let sortDir = 'asc';
 let searchTimeout;
 let newProjectPendingFiles = []; // For storing files before project exists
+let lastUpdatedId = null; // Tracks recently updated row for highlight
 
 const STATUS_OPTIONS = ['In Progress', 'Completed', 'Archived'];
 let activeModalProjectId = null;
@@ -84,6 +85,7 @@ async function fetchData() {
         const label = document.getElementById('current-year-label');
         if (label) label.innerText = "Error loading data.";
         tbody.innerHTML = `<tr><td colspan="${colCount}" class="loading-text">Error loading projects.</td></tr>`;
+        return;
     } else {
         allData = data;
         const years = [...new Set(allData.map(item => item.year))];
@@ -97,7 +99,7 @@ async function fetchData() {
 
         if (currentYear !== null) localStorage.setItem('selectedYear', currentYear);
         renderYearButtons(years);
-        renderTable();
+        renderTable(true);
     }
 }
 
@@ -131,7 +133,7 @@ function parseFiles(fileData) {
     }
 }
 
-function renderTable() {
+function renderTable(shouldAnimate = false) {
     const label = document.getElementById('current-year-label');
     if (label) label.innerText = `Year: ${currentYear || 'N/A'}`;
     
@@ -174,8 +176,12 @@ function renderTable() {
         const fileCount = files.length;
         const previewImg = getFirstImage(files);
 
+        const isUpdated = item.id === lastUpdatedId;
+        const animClass = shouldAnimate ? 'fade-in-row' : (isUpdated ? 'row-updated' : '');
+        const animStyle = shouldAnimate === true ? `style="animation-delay: ${index * 0.05}s"` : '';
+
         return `
-        <tr class="fade-in-row" style="animation-delay: ${index * 0.05}s">
+        <tr class="${animClass}" ${animStyle}>
             <td class="title-cell col-title" data-label="Project" title="${item.title}">
                 <strong>${item.title}</strong>
                 ${previewImg ? `<img src="${previewImg.url}" alt="Preview" class="thumbnail-preview">` : ''}
@@ -213,24 +219,27 @@ function renderTable() {
 }
 
 function handleSearch(val) {
+    lastUpdatedId = null; // Clear highlight on search
     searchQuery = val;
     clearTimeout(searchTimeout);
     // Debounce re-render to 250ms to keep input responsive
-    searchTimeout = setTimeout(renderTable, 250);
+    searchTimeout = setTimeout(() => renderTable(false), 250);
 }
 
 function handleSort(col) {
+    lastUpdatedId = null; // Clear highlight on sort
     if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
     else { sortCol = col; sortDir = 'asc'; }
     renderTable();
 }
 
 function switchYear(year) {
+    lastUpdatedId = null; // Clear highlight on year switch
     currentYear = parseInt(year);
     localStorage.setItem('selectedYear', currentYear);
     const years = [...new Set(allData.map(item => item.year))];
     renderYearButtons(years);
-    renderTable();
+    renderTable(true);
 }
 
 function getStatusClass(status) {
@@ -432,8 +441,10 @@ async function handleCreateSave() {
     }
 
     currentYear = year;
+    lastUpdatedId = newId; 
     closeAddModal();
     await fetchData();
+    showToast(`Project "${title}" successfully created!`);
 }
 
 async function handleEditSave() {
@@ -451,8 +462,9 @@ async function handleEditSave() {
     const itemIndex = allData.findIndex(i => i.id === id);
     if (itemIndex !== -1) allData[itemIndex] = { ...allData[itemIndex], ...updates };
     
+    lastUpdatedId = id; // Trigger highlight
     closeEditModal();
-    renderTable();
+    showToast("Changes saved successfully!");
 }
 
 // --- ADMIN ACTIONS ---
@@ -516,6 +528,8 @@ async function updateItem(id, field, value) {
     } else {
         const item = allData.find(i => i.id === id);
         if (item) item[field] = value;
+        lastUpdatedId = id; 
+        renderTable();
     }
 }
 
@@ -691,30 +705,60 @@ async function removeFile(projectId, fileUrl) {
 }
 
 async function deleteItem(id) {
-    const confirmed = await showConfirm("Are you sure you want to delete this project?", "Delete", "#e74c3c");
+    const project = allData.find(p => p.id === id);
+    if (!project) return;
+
+    const confirmed = await showConfirm(`Delete project "${project.title}"?`, "Delete", "#ef4444");
     if (!confirmed) return;
 
-    // 1. Find the project and all associated files
-    const project = allData.find(p => p.id === id);
-    if (project) {
-        const files = parseFiles(project.file_link);
-        const pathsToDelete = files.map(file => {
-            const parts = file.url.split(`${BUCKET_NAME}/`);
-            // Ensure we get the clean, decoded file path
-            return parts.length > 1 ? decodeURIComponent(parts[1].split('?')[0]) : null;
-        }).filter(p => p !== null);
+    // Store data for potential restoration (excluding system generated fields)
+    const { id: _, created_at: __, ...restoreData } = project;
 
-        // 2. Delete all associated files from Storage
-        if (pathsToDelete.length > 0) {
-            const { error: storageError } = await supabaseClient.storage.from(BUCKET_NAME).remove(pathsToDelete);
-            if (storageError) console.warn("Error purging storage files:", storageError);
-        }
+    const { error } = await supabaseClient.from('projects').delete().eq('id', id);
+    
+    if (error) {
+        showToast("Delete failed", "error");
+    } else {
+        await fetchData();
+        showToast(`Project "${project.title}" deleted`, "success", {
+            label: "Undo",
+            callback: async () => {
+                const { error: undoError } = await supabaseClient.from('projects').insert([restoreData]);
+                if (!undoError) {
+                    await fetchData();
+                    showToast("Project restored!");
+                } else {
+                    showToast("Undo failed", "error");
+                }
+            }
+        });
+    }
+}
+
+function showToast(message, type = 'success', action = null) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    const icon = type === 'success' ? `<svg style="width:18px;height:18px;color:#10b981" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>` : `<svg style="width:18px;height:18px;color:var(--danger)" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`;
+    toast.innerHTML = `${icon} <span>${message}</span>`;
+
+    if (action) {
+        const actionBtn = document.createElement('button');
+        actionBtn.className = 'toast-action';
+        actionBtn.innerText = action.label;
+        actionBtn.onclick = (e) => {
+            e.stopPropagation();
+            action.callback();
+            toast.remove();
+        };
+        toast.appendChild(actionBtn);
     }
 
-    // 3. Delete the database row
-    const { error } = await supabaseClient.from('projects').delete().eq('id', id);
-    if (error) alert("Delete failed");
-    else await fetchData();
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.remove();
+    }, 3500);
 }
 
 init();
