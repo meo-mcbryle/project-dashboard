@@ -319,6 +319,22 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
         color: var(--text-muted);
     }
 
+    /* Modal Mobile Optimization */
+    .modal-content {
+        padding: 20px !important;
+        width: 95% !important;
+        max-width: 100% !important;
+        max-height: 90vh;
+        overflow-y: auto;
+        border-radius: 12px;
+    }
+    .modal-header {
+        margin-bottom: 16px !important;
+    }
+    .modal-header h3 {
+        font-size: 1.1rem !important;
+    }
+
     .action-wrapper { 
         display: flex;
         align-items: center;
