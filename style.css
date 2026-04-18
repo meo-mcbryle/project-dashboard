@@ -370,6 +370,19 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
     border: 1px solid var(--danger) !important;
 }
 
+/* Spinner for loading states */
+.spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* Specialized layering for stacked modals */
 #error-modal { z-index: 1100; }
 #confirm-modal { z-index: 1200; }

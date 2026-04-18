@@ -499,9 +499,20 @@ function closeLoginModal() {
     toggleModal('login-modal', false);
 }
 
-function handleLoginSubmit() {
+async function handleLoginSubmit() {
     const passInput = document.getElementById('admin-password-input');
-    const pass = passInput ? passInput.value.trim() : ''; // .trim() is vital for mobile auto-correct
+    const submitBtn = document.getElementById('login-submit-btn');
+    if (!passInput || !submitBtn) return;
+
+    const pass = passInput.value.trim();
+    const originalContent = submitBtn.innerHTML;
+
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<span style="display:flex; align-items:center; gap:8px; justify-content:center;"><div class="spinner"></div> Logging in...</span>`;
+
+    // Artificial delay for a professional "world-class" feel
+    await new Promise(resolve => setTimeout(resolve, 600));
 
     if (pass === ADMIN_PASSWORD) {
         isAdmin = true;
@@ -512,8 +523,12 @@ function handleLoginSubmit() {
         document.getElementById('admin-panel').style.display = 'block';
         document.getElementById('auth-btn').innerText = "Exit Admin";
         renderTable();
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalContent;
         closeLoginModal();
     } else {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalContent;
         const modalContent = document.querySelector('#login-modal .modal-content');
         modalContent.classList.add('shake');
         
