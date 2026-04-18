@@ -113,7 +113,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus, input[type="
 .btn-action:hover { background: #f1f5f9; }
 .btn-action.edit:hover { color: var(--primary); }
 .btn-action.delete:hover { color: var(--danger); }
-.btn-action svg { width: 18px; height: 18px; }
+.btn-action svg { width: 18px; height: 18px; display: block; flex-shrink: 0; }
 
 /* Tooltip Implementation */
 .btn-action::after {
@@ -320,11 +320,20 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
     }
 
     .action-wrapper { 
-        justify-content: flex-start; 
-        gap: 8px; 
-        margin-left: -6px; /* Pulls the icon edge to align with project text above */
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        margin: 0;
+        width: auto;
     }
     .action-divider { display: none; }
-    .btn-action { padding: 6px; } 
+    .btn-action { 
+        padding: 8px; 
+        background: #f1f5f9; 
+        width: 36px; 
+        height: 36px; 
+        border-radius: 8px;
+    } 
     .location-text { white-space: normal; }
 }

@@ -156,7 +156,7 @@ function renderTable() {
     `;}).join('');
 
     // Toggle admin column visibility
-    document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? 'table-cell' : 'none');
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
 }
 
 function handleSearch(val) {
