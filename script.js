@@ -418,12 +418,16 @@ function handleLoginSubmit() {
         // Remove the class after the animation ends so it can be re-triggered
         setTimeout(() => {
             modalContent.classList.remove('shake');
-            showErrorModal();
+            showErrorModal("The password you entered is incorrect. Please try again or contact the administrator.");
         }, 400);
     }
 }
 
-function showErrorModal() {
+function showErrorModal(message) {
+
+    if (message) {
+        document.getElementById('error-modal-message').innerText = message;
+    }
     document.getElementById('error-modal').style.display = 'flex';
 }
 
