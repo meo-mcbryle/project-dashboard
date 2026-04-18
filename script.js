@@ -58,8 +58,8 @@ async function fetchData() {
     } else {
         allData = data;
         const years = [...new Set(allData.map(item => item.year))];
-        renderYearButtons(years);
         if (!currentYear && years.length > 0) currentYear = years[0];
+        renderYearButtons(years);
         renderTable();
     }
 }
@@ -69,7 +69,7 @@ function renderYearButtons(years) {
     const container = document.getElementById('year-buttons');
     if (!container) return;
     container.innerHTML = years.map(y => `
-        <button class="${y === currentYear ? 'active' : ''}" onclick="switchYear('${y}')">${y}</button>
+        <button class="${String(y) === String(currentYear) ? 'active' : ''}" onclick="switchYear('${y}')">${y}</button>
     `).join('');
 }
 
