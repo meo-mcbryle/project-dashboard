@@ -22,6 +22,22 @@ let activeModalProjectId = null;
 async function init() {
     await fetchData();
     initDropZone();
+
+    // Close modals when clicking on the backdrop (outside the content area)
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            const closers = {
+                'file-modal': closeModal,
+                'edit-modal': closeEditModal,
+                'create-modal': closeAddModal,
+                'login-modal': closeLoginModal,
+                'error-modal': closeErrorModal,
+                'confirm-modal': () => closeConfirmModal(false)
+            };
+            if (closers[e.target.id]) closers[e.target.id]();
+        }
+    });
+
     // Debugging check: Verify if the 'status' column exists in returned data
     if (allData.length > 0 && !allData[0].hasOwnProperty('status')) {
         console.error("Schema Mismatch: The 'status' column is missing from your Supabase table.");
@@ -194,29 +210,40 @@ function isImage(url) {
 }
 
 // --- MODAL LOGIC ---
+function toggleModal(id, show, callback) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    if (show) {
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            modal.style.opacity = '1';
+            if (callback) callback();
+        }, 10);
+    } else {
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.style.display = 'none';
+            if (callback) callback();
+        }, 300);
+    }
+}
+
 let confirmResolve;
 function showConfirm(message, okText = 'Delete', okColor = '#e74c3c') {
     return new Promise((resolve) => {
         confirmResolve = resolve;
-        const modal = document.getElementById('confirm-modal');
-        const okBtn = document.getElementById('confirm-ok-btn');
-        
         document.getElementById('confirm-message').innerText = message;
+        const okBtn = document.getElementById('confirm-ok-btn');
         okBtn.innerText = okText;
         okBtn.style.backgroundColor = okColor;
-        
-        modal.style.display = 'flex';
-        setTimeout(() => modal.style.opacity = '1', 10);
+        toggleModal('confirm-modal', true);
     });
 }
 
 function closeConfirmModal(result) {
-    const modal = document.getElementById('confirm-modal');
-    modal.style.opacity = '0';
-    setTimeout(() => {
-        modal.style.display = 'none';
+    toggleModal('confirm-modal', false, () => {
         if (confirmResolve) confirmResolve(result);
-    }, 300);
+    });
 }
 
 function openFileModal(projectId) {
@@ -227,9 +254,7 @@ function openFileModal(projectId) {
     document.getElementById('modal-project-title').innerText = project.title;
     document.getElementById('modal-admin-section').style.display = isAdmin ? 'block' : 'none';
     renderModalFiles();
-    const modal = document.getElementById('file-modal');
-    modal.style.display = 'flex';
-    setTimeout(() => modal.style.opacity = '1', 10);
+    toggleModal('file-modal', true);
 }
 
 function renderModalFiles() {
@@ -255,15 +280,12 @@ function renderModalFiles() {
 }
 
 function closeModal() {
-    const modal = document.getElementById('file-modal');
-    modal.style.opacity = '0';
-    setTimeout(() => {
-        modal.style.display = 'none';
+    toggleModal('file-modal', false, () => {
         activeModalProjectId = null;
         document.getElementById('modal-file-upload').value = ''; 
         document.getElementById('modal-url-upload').value = ''; 
         renderTable(); 
-    }, 300);
+    });
 }
 
 function openEditModal(projectId) {
@@ -281,21 +303,16 @@ function openEditModal(projectId) {
     `).join('');
 
     renderModalFiles();
-    const modal = document.getElementById('edit-modal');
-    modal.style.display = 'flex';
-    setTimeout(() => modal.style.opacity = '1', 10);
+    toggleModal('edit-modal', true);
 }
 
 function closeEditModal() {
-    const modal = document.getElementById('edit-modal');
-    modal.style.opacity = '0';
-    setTimeout(() => {
-        modal.style.display = 'none';
+    toggleModal('edit-modal', false, () => {
         activeModalProjectId = null;
         document.getElementById('edit-file-upload').value = '';
         document.getElementById('edit-url-upload').value = '';
         renderTable();
-    }, 300);
+    });
 }
 
 function getActiveFileElements() {
@@ -327,19 +344,14 @@ async function addNewProject() {
     statusSelect.innerHTML = STATUS_OPTIONS.map(opt => `<option value="${opt}">${opt}</option>`).join('');
 
     renderModalFiles();
-    const modal = document.getElementById('create-modal');
-    modal.style.display = 'flex';
-    setTimeout(() => modal.style.opacity = '1', 10);
+    toggleModal('create-modal', true);
 }
 
 function closeAddModal() {
-    const modal = document.getElementById('create-modal');
-    modal.style.opacity = '0';
-    setTimeout(() => {
-        modal.style.display = 'none';
+    toggleModal('create-modal', false, () => {
         activeModalProjectId = null;
         newProjectPendingFiles = [];
-    }, 300);
+    });
 }
 
 async function handleCreateSave() {
@@ -409,18 +421,13 @@ async function handleEditSave() {
 function handleAuthClick() {
     if (isAdmin) { logout(); return; }
     document.getElementById('admin-password-input').value = '';
-    const modal = document.getElementById('login-modal');
-    modal.style.display = 'flex';
-    setTimeout(() => {
-        modal.style.opacity = '1';
+    toggleModal('login-modal', true, () => {
         document.getElementById('admin-password-input').focus();
-    }, 10);
+    });
 }
 
 function closeLoginModal() {
-    const modal = document.getElementById('login-modal');
-    modal.style.opacity = '0';
-    setTimeout(() => modal.style.display = 'none', 300);
+    toggleModal('login-modal', false);
 }
 
 function handleLoginSubmit() {
@@ -448,19 +455,14 @@ function showErrorModal(message) {
     if (message) {
         document.getElementById('error-modal-message').innerText = message;
     }
-    const modal = document.getElementById('error-modal');
-    modal.style.display = 'flex';
-    setTimeout(() => modal.style.opacity = '1', 10);
+    toggleModal('error-modal', true);
 }
 
 function closeErrorModal() {
-    const modal = document.getElementById('error-modal');
-    modal.style.opacity = '0';
-    setTimeout(() => {
-        modal.style.display = 'none';
+    toggleModal('error-modal', false, () => {
         document.getElementById('admin-password-input').value = '';
         document.getElementById('admin-password-input').focus();
-    }, 300);
+    });
 }
 
 function logout() {
