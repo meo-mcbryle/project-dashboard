@@ -6,9 +6,19 @@ const ADMIN_PASSWORD = 'jharold'; // Change this!
 const BUCKET_NAME = 'project-files'; // Ensure this bucket exists in Supabase Storage
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Helper to safely access localStorage on mobile browsers
+const getStorageItem = (key) => {
+    try {
+        return localStorage.getItem(key);
+    } catch (e) {
+        console.warn('LocalStorage access denied:', e);
+        return null;
+    }
+};
+
 let allData = [];
-let currentYear = localStorage.getItem('selectedYear') ? parseInt(localStorage.getItem('selectedYear')) : null;
-let isAdmin = localStorage.getItem('isAdmin') === 'true';
+let currentYear = getStorageItem('selectedYear') ? parseInt(getStorageItem('selectedYear')) : null;
+let isAdmin = getStorageItem('isAdmin') === 'true';
 let searchQuery = '';
 let sortCol = 'title';
 let sortDir = 'asc';
@@ -21,11 +31,12 @@ let activeModalProjectId = null;
 
 // --- INITIALIZATION ---
 async function init() {
-    // Handle Admin UI immediately to prevent layout shift during fetch
-    if (isAdmin) {
-        document.getElementById('admin-panel').style.display = 'block';
-        document.getElementById('auth-btn').innerText = "Exit Admin";
-    }
+    const adminPanel = document.getElementById('admin-panel');
+    const authBtn = document.getElementById('auth-btn');
+
+    // Force UI state based on session to ensure persistence on refresh
+    if (adminPanel) adminPanel.style.display = isAdmin ? 'block' : 'none';
+    if (authBtn) authBtn.innerText = isAdmin ? "Exit Admin" : "Admin Login";
 
     await fetchData();
     initDropZone();
@@ -489,10 +500,15 @@ function closeLoginModal() {
 }
 
 function handleLoginSubmit() {
-    const pass = document.getElementById('admin-password-input').value;
+    const passInput = document.getElementById('admin-password-input');
+    const pass = passInput ? passInput.value.trim() : ''; // .trim() is vital for mobile auto-correct
+
     if (pass === ADMIN_PASSWORD) {
         isAdmin = true;
-        localStorage.setItem('isAdmin', 'true');
+        try {
+            localStorage.setItem('isAdmin', 'true');
+        } catch (e) { console.error('Failed to save session:', e); }
+
         document.getElementById('admin-panel').style.display = 'block';
         document.getElementById('auth-btn').innerText = "Exit Admin";
         renderTable();
@@ -523,7 +539,10 @@ function closeErrorModal() {
 
 function logout() {
     isAdmin = false;
-    localStorage.setItem('isAdmin', 'false');
+    try {
+        localStorage.setItem('isAdmin', 'false');
+    } catch (e) { console.error('Failed to clear session:', e); }
+
     document.getElementById('admin-panel').style.display = 'none';
     document.getElementById('auth-btn').innerText = "Admin Login";
     renderTable();
