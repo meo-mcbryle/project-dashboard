@@ -1,7 +1,6 @@
 // --- CONFIGURATION ---
 const SUPABASE_URL = 'https://otqxzgbjumsasmfdotia.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im90cXh6Z2JqdW1zYXNtZmRvdGlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0MTkyNzgsImV4cCI6MjA5MTk5NTI3OH0.KYVnaM3rqGxCj2sduiIoEhCuedwuYn9HZUvgqD0VNL4';
-const ADMIN_PASSWORD = 'jharold'; // Change this!
 
 const BUCKET_NAME = 'project-files'; // Ensure this bucket exists in Supabase Storage
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -425,7 +424,7 @@ async function handleCreateSave() {
 
     // 1. Insert Initial Project
     const { data, error } = await supabaseClient.from('projects').insert([{ title, location, year, status, file_link: '[]' }]).select();
-    if (error) return alert("Creation failed: " + error.message);
+    if (error) return showToast("Creation failed: " + error.message, "error");
     
     const newId = data[0].id;
     const finalFiles = [];
@@ -469,7 +468,7 @@ async function handleEditSave() {
     };
 
     const { error } = await supabaseClient.from('projects').update(updates).eq('id', id);
-    if (error) return alert("Save failed: " + error.message);
+    if (error) return showToast("Save failed: " + error.message, "error");
 
     // If the year changed, we follow the project to the new year view
     if (oldProject && oldProject.year !== updates.year) {
@@ -511,10 +510,22 @@ async function handleLoginSubmit() {
     submitBtn.disabled = true;
     submitBtn.innerHTML = `<span style="display:flex; align-items:center; gap:8px; justify-content:center;"><div class="spinner"></div> Logging in...</span>`;
 
-    // Artificial delay for a professional "world-class" feel
-    await new Promise(resolve => setTimeout(resolve, 600));
+    // Fetch the password from Supabase
+    const { data, error: fetchError } = await supabaseClient
+        .from('app_config')
+        .select('value')
+        .eq('key', 'admin_password')
+        .single();
 
-    if (pass === ADMIN_PASSWORD) {
+    if (fetchError || !data) {
+        console.error("Configuration error:", fetchError);
+        showErrorModal("Could not connect to the authentication server.");
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalContent;
+        return;
+    }
+
+    if (pass === data.value) {
         isAdmin = true;
         try {
             localStorage.setItem('isAdmin', 'true');
@@ -568,7 +579,7 @@ function logout() {
 async function updateItem(id, field, value) {
     const { error } = await supabaseClient.from('projects').update({ [field]: value }).eq('id', id);
     if (error) {
-        alert("Save failed: " + error.message);
+        showToast("Save failed: " + error.message, "error");
     } else {
         const item = allData.find(i => i.id === id);
         if (item) item[field] = value;
@@ -742,7 +753,7 @@ async function removeFile(projectId, fileUrl) {
         // Strip query parameters and decode URI components (e.g. %20 -> space)
         const filePath = decodeURIComponent(urlParts[1].split('?')[0]);
         const { error: storageError } = await supabaseClient.storage.from(BUCKET_NAME).remove([filePath]);
-        if (storageError) alert("Storage deletion failed: " + storageError.message);
+        if (storageError) showToast("Storage file cleanup failed", "error");
     }
 
     renderModalFiles();
