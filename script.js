@@ -97,7 +97,7 @@ function renderTable() {
     if (!tbody) return;
     
     let filtered = allData.filter(item => 
-        item.year == currentYear && 
+        item.year === parseInt(currentYear) && 
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -194,33 +194,29 @@ function isImage(url) {
 }
 
 // --- MODAL LOGIC ---
+let confirmResolve;
 function showConfirm(message, okText = 'Delete', okColor = '#e74c3c') {
     return new Promise((resolve) => {
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5); display: flex; align-items: center;
-            justify-content: center; z-index: 2000; transition: opacity 0.2s;
-        `;
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            background: white; padding: 24px; border-radius: 12px;
-            max-width: 400px; width: 90%; text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-family: inherit;
-        `;
-        modal.innerHTML = `
-            <p style="margin-bottom: 24px; font-size: 1.1rem; color: #333;">${message}</p>
-            <div style="display: flex; justify-content: center; gap: 12px;">
-                <button id="conf-cancel" style="padding: 10px 20px; border: 1px solid #ddd; background: #f8f9fa; border-radius: 6px; cursor: pointer; font-weight: 500;">Cancel</button>
-                <button id="conf-ok" style="padding: 10px 20px; border: none; background: ${okColor}; color: white; border-radius: 6px; cursor: pointer; font-weight: 500;">${okText}</button>
-            </div>
-        `;
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-        const done = (res) => { document.body.removeChild(overlay); resolve(res); };
-        document.getElementById('conf-cancel').onclick = () => done(false);
-        document.getElementById('conf-ok').onclick = () => done(true);
+        confirmResolve = resolve;
+        const modal = document.getElementById('confirm-modal');
+        const okBtn = document.getElementById('confirm-ok-btn');
+        
+        document.getElementById('confirm-message').innerText = message;
+        okBtn.innerText = okText;
+        okBtn.style.backgroundColor = okColor;
+        
+        modal.style.display = 'flex';
+        setTimeout(() => modal.style.opacity = '1', 10);
     });
+}
+
+function closeConfirmModal(result) {
+    const modal = document.getElementById('confirm-modal');
+    modal.style.opacity = '0';
+    setTimeout(() => {
+        modal.style.display = 'none';
+        if (confirmResolve) confirmResolve(result);
+    }, 300);
 }
 
 function openFileModal(projectId) {
@@ -231,7 +227,9 @@ function openFileModal(projectId) {
     document.getElementById('modal-project-title').innerText = project.title;
     document.getElementById('modal-admin-section').style.display = isAdmin ? 'block' : 'none';
     renderModalFiles();
-    document.getElementById('file-modal').style.display = 'flex';
+    const modal = document.getElementById('file-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.style.opacity = '1', 10);
 }
 
 function renderModalFiles() {
@@ -257,11 +255,15 @@ function renderModalFiles() {
 }
 
 function closeModal() {
-    document.getElementById('file-modal').style.display = 'none';
-    activeModalProjectId = null;
-    document.getElementById('modal-file-upload').value = ''; // Reset input
-    document.getElementById('modal-url-upload').value = ''; // Reset input
-    renderTable(); // Sync main table
+    const modal = document.getElementById('file-modal');
+    modal.style.opacity = '0';
+    setTimeout(() => {
+        modal.style.display = 'none';
+        activeModalProjectId = null;
+        document.getElementById('modal-file-upload').value = ''; 
+        document.getElementById('modal-url-upload').value = ''; 
+        renderTable(); 
+    }, 300);
 }
 
 function openEditModal(projectId) {
@@ -279,15 +281,21 @@ function openEditModal(projectId) {
     `).join('');
 
     renderModalFiles();
-    document.getElementById('edit-modal').style.display = 'flex';
+    const modal = document.getElementById('edit-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.style.opacity = '1', 10);
 }
 
 function closeEditModal() {
-    document.getElementById('edit-modal').style.display = 'none';
-    activeModalProjectId = null;
-    document.getElementById('edit-file-upload').value = '';
-    document.getElementById('edit-url-upload').value = '';
-    renderTable();
+    const modal = document.getElementById('edit-modal');
+    modal.style.opacity = '0';
+    setTimeout(() => {
+        modal.style.display = 'none';
+        activeModalProjectId = null;
+        document.getElementById('edit-file-upload').value = '';
+        document.getElementById('edit-url-upload').value = '';
+        renderTable();
+    }, 300);
 }
 
 function getActiveFileElements() {
@@ -319,13 +327,19 @@ async function addNewProject() {
     statusSelect.innerHTML = STATUS_OPTIONS.map(opt => `<option value="${opt}">${opt}</option>`).join('');
 
     renderModalFiles();
-    document.getElementById('create-modal').style.display = 'flex';
+    const modal = document.getElementById('create-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.style.opacity = '1', 10);
 }
 
 function closeAddModal() {
-    document.getElementById('create-modal').style.display = 'none';
-    activeModalProjectId = null;
-    newProjectPendingFiles = [];
+    const modal = document.getElementById('create-modal');
+    modal.style.opacity = '0';
+    setTimeout(() => {
+        modal.style.display = 'none';
+        activeModalProjectId = null;
+        newProjectPendingFiles = [];
+    }, 300);
 }
 
 async function handleCreateSave() {
@@ -395,12 +409,18 @@ async function handleEditSave() {
 function handleAuthClick() {
     if (isAdmin) { logout(); return; }
     document.getElementById('admin-password-input').value = '';
-    document.getElementById('login-modal').style.display = 'flex';
-    document.getElementById('admin-password-input').focus();
+    const modal = document.getElementById('login-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        modal.style.opacity = '1';
+        document.getElementById('admin-password-input').focus();
+    }, 10);
 }
 
 function closeLoginModal() {
-    document.getElementById('login-modal').style.display = 'none';
+    const modal = document.getElementById('login-modal');
+    modal.style.opacity = '0';
+    setTimeout(() => modal.style.display = 'none', 300);
 }
 
 function handleLoginSubmit() {
@@ -418,7 +438,7 @@ function handleLoginSubmit() {
         // Remove the class after the animation ends so it can be re-triggered
         setTimeout(() => {
             modalContent.classList.remove('shake');
-            showErrorModal("The password you entered is incorrect. Please try again or contact the administrator.");
+            showErrorModal("The password you entered is incorrect. Please try again or contact your system administrator.");
         }, 400);
     }
 }
@@ -428,13 +448,19 @@ function showErrorModal(message) {
     if (message) {
         document.getElementById('error-modal-message').innerText = message;
     }
-    document.getElementById('error-modal').style.display = 'flex';
+    const modal = document.getElementById('error-modal');
+    modal.style.display = 'flex';
+    setTimeout(() => modal.style.opacity = '1', 10);
 }
 
 function closeErrorModal() {
-    document.getElementById('error-modal').style.display = 'none';
-    document.getElementById('admin-password-input').value = '';
-    document.getElementById('admin-password-input').focus();
+    const modal = document.getElementById('error-modal');
+    modal.style.opacity = '0';
+    setTimeout(() => {
+        modal.style.display = 'none';
+        document.getElementById('admin-password-input').value = '';
+        document.getElementById('admin-password-input').focus();
+    }, 300);
 }
 
 function logout() {

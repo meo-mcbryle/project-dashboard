@@ -51,8 +51,23 @@
     </div>
 </div>
 
+<!-- Confirmation Modal -->
+<div id="confirm-modal" class="modal">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <div id="confirm-icon" style="font-size: 3rem; margin-bottom: 10px; line-height: 1; color: var(--primary);">?</div>
+        <h3 id="confirm-title" style="margin-bottom: 10px; color: var(--text-main);">Confirm Action</h3>
+        <p id="confirm-message" style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.95rem;">Are you sure you want to proceed?</p>
+        <div style="display: flex; justify-content: center; gap: 12px;">
+            <button onclick="closeConfirmModal(false)" style="padding: 10px 20px; border: 1px solid var(--border); border-radius: 8px; font-weight: 600;">Cancel</button>
+            <button id="confirm-ok-btn" onclick="closeConfirmModal(true)" style="padding: 10px 20px; background: var(--primary); color: white; border-radius: 8px; border: none; font-weight: 600;">
+                Confirm
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Error Modal -->
-<div id="error-modal" class="modal" style="z-index: 1100;">
+<div id="error-modal" class="modal">
     <div class="modal-content" style="max-width: 350px; text-align: center;">
         <div style="color: var(--danger); font-size: 3rem; margin-bottom: 10px; line-height: 1;">&times;</div>
         <h3 style="margin-bottom: 10px; color: var(--text-main);">Authentication Failed</h3>
