@@ -101,11 +101,39 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus { border-colo
     padding: 6px; border: none; background: none; cursor: pointer; 
     display: flex; align-items: center; justify-content: center; 
     color: var(--text-muted); border-radius: 4px; transition: all 0.2s;
+    position: relative;
 }
 .btn-action:hover { background: #f1f5f9; }
 .btn-action.edit:hover { color: var(--primary); }
 .btn-action.delete:hover { color: var(--danger); }
 .btn-action svg { width: 18px; height: 18px; }
+
+/* Tooltip Implementation */
+.btn-action::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
+    background: #1e293b;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    pointer-events: none;
+}
+.btn-action:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
 
 a { color: var(--primary); text-decoration: none; font-weight: 600; font-size: 0.875rem; }
 a:hover { text-decoration: underline; }
