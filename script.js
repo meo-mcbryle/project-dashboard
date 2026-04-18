@@ -7,8 +7,8 @@ const BUCKET_NAME = 'project-files'; // Ensure this bucket exists in Supabase St
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allData = [];
-let currentYear = null;
-let isAdmin = false;
+let currentYear = localStorage.getItem('selectedYear') ? parseInt(localStorage.getItem('selectedYear')) : null;
+let isAdmin = localStorage.getItem('isAdmin') === 'true';
 let searchQuery = '';
 let sortCol = 'title';
 let sortDir = 'asc';
@@ -20,6 +20,12 @@ let activeModalProjectId = null;
 
 // --- INITIALIZATION ---
 async function init() {
+    // Handle Admin UI immediately to prevent layout shift during fetch
+    if (isAdmin) {
+        document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('auth-btn').innerText = "Exit Admin";
+    }
+
     await fetchData();
     initDropZone();
 
@@ -45,7 +51,29 @@ async function init() {
 }
 
 async function fetchData() {
-    document.getElementById('table-body').innerHTML = '<tr><td colspan="5" class="loading-text">Fetching projects...</td></tr>';
+    const tbody = document.getElementById('table-body');
+    const colCount = isAdmin ? 5 : 4;
+
+    // Calculate how many skeletons to show based on the current view to minimize layout shift
+    const currentViewCount = allData.filter(item => 
+        item.year === currentYear && 
+        item.title.toLowerCase().includes(searchQuery.toLowerCase())
+    ).length;
+    
+    // Use the detected count for the current view, or 1 as a minimum loading indicator
+    const skeletonCount = currentViewCount || 1;
+
+    // Show individual column skeletons to maintain table structure during fetch
+    tbody.innerHTML = Array(skeletonCount).fill(0).map(() => `
+        <tr class="skeleton-row">
+            <td class="col-title"><div class="skeleton-line"></div></td>
+            <td class="col-location"><div class="skeleton-line"></div></td>
+            <td class="col-status"><div class="skeleton-line"></div></td>
+            <td class="col-files"><div class="skeleton-line"></div></td>
+            ${isAdmin ? '<td class="col-admin"><div class="skeleton-line"></div></td>' : ''}
+        </tr>
+    `).join('');
+
     const { data, error } = await supabaseClient
         .from('projects')
         .select('*')
@@ -55,10 +83,19 @@ async function fetchData() {
         console.error('Fetch error:', error);
         const label = document.getElementById('current-year-label');
         if (label) label.innerText = "Error loading data.";
+        tbody.innerHTML = `<tr><td colspan="${colCount}" class="loading-text">Error loading projects.</td></tr>`;
     } else {
         allData = data;
         const years = [...new Set(allData.map(item => item.year))];
-        if (!currentYear && years.length > 0) currentYear = years[0];
+
+        if (years.length > 0) {
+            // If no year is selected, or the selected year doesn't exist in the data anymore, default to the latest
+            if (currentYear === null || !years.includes(currentYear)) {
+                currentYear = parseInt(years[0]);
+            }
+        }
+
+        if (currentYear !== null) localStorage.setItem('selectedYear', currentYear);
         renderYearButtons(years);
         renderTable();
     }
@@ -69,7 +106,7 @@ function renderYearButtons(years) {
     const container = document.getElementById('year-buttons');
     if (!container) return;
     container.innerHTML = years.map(y => `
-        <button class="${String(y) === String(currentYear) ? 'active' : ''}" onclick="switchYear('${y}')">${y}</button>
+        <button class="${Number(y) === currentYear ? 'active' : ''}" onclick="switchYear('${y}')">${y}</button>
     `).join('');
 }
 
@@ -113,7 +150,7 @@ function renderTable() {
     if (!tbody) return;
     
     let filtered = allData.filter(item => 
-        item.year === parseInt(currentYear) && 
+        item.year === currentYear && 
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -131,14 +168,14 @@ function renderTable() {
         return;
     }
 
-    tbody.innerHTML = filtered.map(item => {
+    tbody.innerHTML = filtered.map((item, index) => {
         // Pre-parse files once per row to optimize performance
         const files = parseFiles(item.file_link);
         const fileCount = files.length;
         const previewImg = getFirstImage(files);
 
         return `
-        <tr>
+        <tr class="fade-in-row" style="animation-delay: ${index * 0.05}s">
             <td class="title-cell col-title" data-label="Project" title="${item.title}">
                 <strong>${item.title}</strong>
                 ${previewImg ? `<img src="${previewImg.url}" alt="Preview" class="thumbnail-preview">` : ''}
@@ -189,7 +226,8 @@ function handleSort(col) {
 }
 
 function switchYear(year) {
-    currentYear = year;
+    currentYear = parseInt(year);
+    localStorage.setItem('selectedYear', currentYear);
     const years = [...new Set(allData.map(item => item.year))];
     renderYearButtons(years);
     renderTable();
@@ -434,6 +472,7 @@ function handleLoginSubmit() {
     const pass = document.getElementById('admin-password-input').value;
     if (pass === ADMIN_PASSWORD) {
         isAdmin = true;
+        localStorage.setItem('isAdmin', 'true');
         document.getElementById('admin-panel').style.display = 'block';
         document.getElementById('auth-btn').innerText = "Exit Admin";
         renderTable();
@@ -451,10 +490,7 @@ function handleLoginSubmit() {
 }
 
 function showErrorModal(message) {
-
-    if (message) {
-        document.getElementById('error-modal-message').innerText = message;
-    }
+    document.getElementById('error-modal-message').innerText = message;
     toggleModal('error-modal', true);
 }
 
@@ -467,6 +503,7 @@ function closeErrorModal() {
 
 function logout() {
     isAdmin = false;
+    localStorage.setItem('isAdmin', 'false');
     document.getElementById('admin-panel').style.display = 'none';
     document.getElementById('auth-btn').innerText = "Admin Login";
     renderTable();
