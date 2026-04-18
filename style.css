@@ -318,6 +318,12 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
         color: var(--text-muted);
     }
 
-    .action-wrapper { justify-content: flex-start; }
+    .action-wrapper { 
+        justify-content: flex-start; 
+        width: 100%; 
+        gap: 12px; 
+    }
+    .action-divider { display: none; }
+    .btn-action { padding: 8px; margin-left: -8px; } /* Improves touch area while maintaining visual alignment */
     .location-text { white-space: normal; }
 }
