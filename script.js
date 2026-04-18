@@ -525,6 +525,7 @@ async function handleLoginSubmit() {
         renderTable();
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalContent;
+        showToast("Welcome back, Admin!");
         closeLoginModal();
     } else {
         submitBtn.disabled = false;
@@ -561,6 +562,7 @@ function logout() {
     document.getElementById('admin-panel').style.display = 'none';
     document.getElementById('auth-btn').innerText = "Admin Login";
     renderTable();
+    showToast("Logged out successfully.");
 }
 
 async function updateItem(id, field, value) {
