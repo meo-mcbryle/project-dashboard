@@ -283,14 +283,14 @@ function handleSearch(val) {
     searchQuery = val;
     clearTimeout(searchTimeout);
     // Debounce re-render to 250ms to keep input responsive
-    searchTimeout = setTimeout(() => renderTable(false), 250);
+    searchTimeout = setTimeout(() => renderTable(true), 250);
 }
 
 function handleSort(col) {
     lastUpdatedId = null; // Clear highlight on sort
     if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
     else { sortCol = col; sortDir = 'asc'; }
-    renderTable();
+    renderTable(true);
 }
 
 function switchYear(year) {

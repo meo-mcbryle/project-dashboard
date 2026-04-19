@@ -275,11 +275,11 @@ a:hover { text-decoration: underline; }
 /* Row Entrance Animation */
 .fade-in-row {
     opacity: 0; /* Ensure rows are hidden before animation starts */
-    animation: fadeInRow 0.5s ease-out forwards;
+    animation: fadeInRow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 @keyframes fadeInRow {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
@@ -397,6 +397,28 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
 }
 .btn-log-go:hover { background: var(--primary); color: white; transform: translateX(2px); }
 .btn-log-go svg { width: 14px; height: 14px; }
+
+/* Feature Tags */
+.beta-tag {
+    position: absolute;
+    top: -6px;
+    right: 4px;
+    font-size: 0.4rem;
+    background: var(--primary);
+    color: white;
+    padding: 1px 3px;
+    border-radius: 2px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    pointer-events: none;
+    transition: background-color 0.3s ease;
+}
+
+button:hover .beta-tag {
+    background: #f97316; /* Vivid Orange */
+}
 
 /* Activity Log Filter Controls */
 .activity-filters {
