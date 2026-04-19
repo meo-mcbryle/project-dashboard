@@ -22,6 +22,11 @@ let currentTheme = getStorageItem('theme') || 'light';
 let searchQuery = '';
 let sortCol = 'title';
 let sortDir = 'asc';
+let activityPage = 0;
+let activityFilter = '';
+let activityStartDate = '';
+let activityEndDate = '';
+const LOGS_PER_PAGE = 10;
 let searchTimeout;
 let newProjectPendingFiles = []; // For storing files before project exists
 let lastUpdatedId = null; // Tracks recently updated row for highlight
@@ -55,7 +60,8 @@ async function init() {
                 'create-modal': closeAddModal,
                 'login-modal': closeLoginModal,
                 'error-modal': closeErrorModal,
-                'confirm-modal': () => closeConfirmModal(false)
+                'confirm-modal': () => closeConfirmModal(false),
+                'activity-modal': closeActivityModal
             };
             if (closers[e.target.id]) closers[e.target.id]();
         }
@@ -69,6 +75,7 @@ async function init() {
 
 async function fetchData() {
     const tbody = document.getElementById('table-body');
+    const statsContainer = document.getElementById('stats-container');
     const colCount = isAdmin ? 5 : 4;
 
     // Calculate how many skeletons to show based on the current view to minimize layout shift
@@ -79,6 +86,16 @@ async function fetchData() {
     
     // Use the detected count for the current view, or 1 as a minimum loading indicator
     const skeletonCount = currentViewCount || 1;
+
+    // Show stats skeletons to prevent layout shift
+    if (statsContainer) {
+        statsContainer.innerHTML = Array(3).fill(0).map(() => `
+            <div class="stat-card">
+                <div class="stat-label"><div class="skeleton-line" style="width: 60%; height: 10px;"></div></div>
+                <div class="stat-value"><div class="skeleton-line" style="width: 40%; height: 28px;"></div></div>
+            </div>
+        `).join('');
+    }
 
     // Show individual column skeletons to maintain table structure during fetch
     tbody.innerHTML = Array(skeletonCount).fill(0).map(() => `
@@ -179,6 +196,8 @@ function renderTable(shouldAnimate = false) {
     });
 
     // Get the first available image for the thumbnail preview
+    renderStats(filtered);
+
     const getFirstImage = (files) => files.find(f => isImage(f.url));
 
     if (filtered.length === 0) {
@@ -234,6 +253,31 @@ function renderTable(shouldAnimate = false) {
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
 }
 
+function renderStats(filteredData) {
+    const container = document.getElementById('stats-container');
+    if (!container) return;
+
+    const total = filteredData.length;
+    const completed = filteredData.filter(i => (i.status || '').toLowerCase() === 'completed').length;
+    const inProgress = filteredData.filter(i => (i.status || '').toLowerCase() === 'in progress').length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    container.innerHTML = `
+        <div class="stat-card">
+            <div class="stat-label">Total Projects (${currentYear})</div>
+            <div class="stat-value">${total}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Projects Completed</div>
+            <div class="stat-value">${completed}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Completion Rate</div>
+            <div class="stat-value">${percentage}%</div>
+        </div>
+    `;
+}
+
 function handleSearch(val) {
     lastUpdatedId = null; // Clear highlight on search
     searchQuery = val;
@@ -273,6 +317,145 @@ function isImage(url) {
 }
 
 // --- MODAL LOGIC ---
+async function logActivity(action, details) {
+    // Logs an admin action to the Supabase activity_log table
+    try {
+        await supabaseClient.from('activity_log').insert([{ action, details }]);
+    } catch (e) {
+        console.error("Logging failed:", e);
+    }
+}
+
+async function openActivityModal() {
+    activityPage = 0;
+    activityFilter = '';
+    activityStartDate = '';
+    activityEndDate = '';
+
+    const filterSelect = document.getElementById('activity-filter');
+    if (filterSelect) filterSelect.value = '';
+
+    const startInput = document.getElementById('activity-start-date');
+    const endInput = document.getElementById('activity-end-date');
+    if (startInput) startInput.value = '';
+    if (endInput) endInput.value = '';
+    
+    const clearBtn = document.getElementById('clear-logs-btn');
+    if (clearBtn) clearBtn.style.display = isAdmin ? 'block' : 'none';
+
+    const list = document.getElementById('activity-log-list');
+    if (list) list.innerHTML = ''; 
+    toggleModal('activity-modal', true);
+    await fetchActivityLogs();
+}
+
+async function fetchActivityLogs() {
+    const list = document.getElementById('activity-log-list');
+    const loadMoreBtn = document.getElementById('load-more-logs');
+    
+    // Show localized loading state
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'loading-text';
+    loadingIndicator.innerText = activityPage === 0 ? 'Loading logs...' : 'Fetching more logs...';
+    list.appendChild(loadingIndicator);
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+
+    const from = activityPage * LOGS_PER_PAGE;
+    const to = from + LOGS_PER_PAGE - 1;
+
+    let query = supabaseClient
+        .from('activity_log')
+        .select('*', { count: 'exact' });
+
+    if (activityFilter) {
+        query = query.eq('action', activityFilter);
+    }
+
+    if (activityStartDate) {
+        query = query.gte('created_at', `${activityStartDate}T00:00:00`);
+    }
+    if (activityEndDate) {
+        query = query.lte('created_at', `${activityEndDate}T23:59:59`);
+    }
+
+    const { data, error, count } = await query
+        .order('created_at', { ascending: false })
+        .range(from, to);
+    
+    loadingIndicator.remove();
+
+    if (error) {
+        showToast("Failed to load activity logs", "error");
+        return;
+    }
+
+    if (data.length === 0 && activityPage === 0) {
+        list.innerHTML = '<div class="no-results">No activity recorded yet.</div>';
+        return;
+    }
+
+    const logsHtml = data.map(log => {
+        const date = new Date(log.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        let badgeClass = 'log-badge-update';
+        if (log.action.includes('Created')) badgeClass = 'log-badge-create';
+        if (log.action.includes('Deleted') || log.action.includes('Removed')) badgeClass = 'log-badge-delete';
+
+        return `
+            <div class="log-item fade-in-row">
+                <div class="log-content">
+                    <span class="log-badge ${badgeClass}">${log.action}</span>
+                    <span class="log-details" title="${log.details}">${log.details}</span>
+                </div>
+                <span class="log-time">${date}</span>
+            </div>
+        `;
+    }).join('');
+
+    list.insertAdjacentHTML('beforeend', logsHtml);
+
+    // Toggle "Load More" button visibility based on remaining records
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = (count > (from + data.length)) ? 'block' : 'none';
+    }
+}
+
+async function loadMoreLogs() {
+    activityPage++;
+    await fetchActivityLogs();
+}
+
+async function handleActivityDateChange() {
+    activityStartDate = document.getElementById('activity-start-date').value;
+    activityEndDate = document.getElementById('activity-end-date').value;
+    activityPage = 0;
+    const list = document.getElementById('activity-log-list');
+    if (list) list.innerHTML = '';
+    await fetchActivityLogs();
+}
+
+async function handleActivityFilter(val) {
+    activityFilter = val;
+    activityPage = 0;
+    const list = document.getElementById('activity-log-list');
+    if (list) list.innerHTML = '';
+    await fetchActivityLogs();
+}
+
+async function clearAllLogs() {
+    const confirmed = await showConfirm("Are you sure you want to permanently delete all activity history?", "Clear All", "#ef4444");
+    if (!confirmed) return;
+
+    const { error } = await supabaseClient.from('activity_log').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) return showToast("Failed to clear logs: " + error.message, "error");
+    
+    showToast("Activity log cleared.");
+    await openActivityModal(); // Refresh view
+}
+
+function closeActivityModal() {
+    toggleModal('activity-modal', false);
+}
+
 function toggleModal(id, show, callback) {
     const modal = document.getElementById(id);
     if (!modal) return;
@@ -460,6 +643,7 @@ async function handleCreateSave() {
     lastUpdatedId = newId; 
     closeAddModal();
     await fetchData();
+    logActivity('Created Project', title);
     showToast(`Project "${title}" successfully created!`);
 }
 
@@ -475,6 +659,7 @@ async function handleEditSave() {
 
     const { error } = await supabaseClient.from('projects').update(updates).eq('id', id);
     if (error) return showToast("Save failed: " + error.message, "error");
+    logActivity('Updated Project', updates.title);
 
     // If the year changed, we follow the project to the new year view
     if (oldProject && oldProject.year !== updates.year) {
@@ -702,6 +887,7 @@ async function uploadFiles(files) {
     await Promise.all(uploadPromises);
 
     await updateItem(id, 'file_link', JSON.stringify(currentFiles));
+    logActivity('Modified Files', item ? item.title : 'New Project');
     renderModalFiles();
 }
 
@@ -760,6 +946,7 @@ async function removeFile(projectId, fileUrl) {
 
     // 1. Update Database
     await updateItem(projectId, 'file_link', JSON.stringify(updatedFiles));
+    logActivity('Removed File', item.title);
 
     // 2. Attempt to delete from Storage (extract path from URL)
     const urlParts = fileUrl.split(`${BUCKET_NAME}/`);
@@ -789,6 +976,7 @@ async function deleteItem(id) {
         showToast("Delete failed", "error");
     } else {
         await fetchData();
+        logActivity('Deleted Project', project.title);
         showToast(`Project "${project.title}" deleted`, "success", {
             label: "Undo",
             callback: async () => {

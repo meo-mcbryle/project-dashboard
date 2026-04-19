@@ -32,9 +32,12 @@
         <div class="admin-controls">
             <span style="font-weight: 600; font-size: 0.875rem;">Admin Session</span>
             <button onclick="addNewProject()" style="background: #10b981; color: white; border: none; font-weight: 600;">+ New Project</button>
+            <button onclick="openActivityModal()">Activity Log</button>
             <button onclick="logout()">Logout</button>
         </div>
     </div>
+
+    <div id="stats-container" class="stats-grid"></div>
 
     <div id="year-buttons" class="year-selector">
         </div>
@@ -228,6 +231,46 @@
                     <button onclick="handleAddUrl()" style="background: var(--primary); color: white; border: none; padding: 0 16px; border-radius: 6px; font-weight: 600; flex-shrink: 0;">Link</button>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Log Modal -->
+<div id="activity-modal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <h3>Activity Log</h3>
+                <button id="clear-logs-btn" class="admin-only" onclick="clearAllLogs()" style="display: none; font-size: 0.7rem; color: var(--danger); font-weight: 700; text-transform: uppercase; padding: 4px 8px; border: 1px solid var(--danger); border-radius: 4px;">Clear All</button>
+            </div>
+            <button class="close-modal" onclick="closeActivityModal()">&times;</button>
+        </div>
+        <div class="activity-filters">
+            <div class="filter-field">
+                <label>Action Type</label>
+                <select id="activity-filter" onchange="handleActivityFilter(this.value)">
+                    <option value="">All Actions</option>
+                    <option value="Created Project">Created Project</option>
+                    <option value="Updated Project">Updated Project</option>
+                    <option value="Deleted Project">Deleted Project</option>
+                    <option value="Modified Files">Modified Files</option>
+                    <option value="Removed File">Removed File</option>
+                </select>
+            </div>
+            <div class="date-fields">
+                <div class="filter-field">
+                    <label>From Date</label>
+                    <input type="date" id="activity-start-date" onchange="handleActivityDateChange()">
+                </div>
+                <div class="filter-field">
+                    <label>To Date</label>
+                    <input type="date" id="activity-end-date" onchange="handleActivityDateChange()">
+                </div>
+            </div>
+        </div>
+        <div id="activity-log-list" class="log-container" style="max-height: 400px; overflow-y: auto;"></div>
+        <div id="activity-pagination" style="margin-top: 16px; display: flex; justify-content: center;">
+            <button id="load-more-logs" onclick="loadMoreLogs()" style="display: none; width: 100%; border: 1px solid var(--border); padding: 12px; font-weight: 600; color: var(--primary);">Load More Activities</button>
         </div>
     </div>
 </div>
