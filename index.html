@@ -9,6 +9,8 @@
         (function() {
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
+            const isAdmin = localStorage.getItem('isAdmin') === 'true';
+            if (isAdmin) document.documentElement.setAttribute('data-admin', 'true');
         })();
     </script>
     <link rel="stylesheet" href="style.css">
@@ -24,8 +26,23 @@
                 <input type="checkbox" id="theme-toggle" onclick="toggleTheme()">
                 <span class="slider"></span>
             </label>
-            <button id="auth-btn" onclick="handleAuthClick()">Admin Login</button>
+            <button id="auth-btn" onclick="handleAuthClick()">Sign In</button>
         </div>
+        <script>
+            // Critical UI Sync: Executes before the first paint to prevent flickering
+            (function() {
+                const isAdmin = localStorage.getItem('isAdmin') === 'true';
+                const theme = localStorage.getItem('theme') || 'light';
+                const authBtn = document.getElementById('auth-btn');
+                const themeToggle = document.getElementById('theme-toggle');
+                
+                if (isAdmin && authBtn) {
+                    authBtn.innerText = "Sign Out";
+                    authBtn.classList.add('admin-active');
+                }
+                if (theme === 'dark' && themeToggle) themeToggle.checked = true;
+            })();
+        </script>
     </div>
 
     <div id="admin-panel">

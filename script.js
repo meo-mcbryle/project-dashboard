@@ -40,8 +40,8 @@ async function init() {
     const authBtn = document.getElementById('auth-btn');
 
     // Force UI state based on session to ensure persistence on refresh
-    if (adminPanel) adminPanel.style.display = isAdmin ? 'block' : 'none';
-    if (authBtn) authBtn.innerText = isAdmin ? "Exit Admin" : "Admin Login";
+    if (authBtn) authBtn.innerText = isAdmin ? "Sign Out" : "Sign In";
+    if (authBtn) authBtn.classList.toggle('admin-active', isAdmin);
 
     // Initialize Theme
     document.documentElement.setAttribute('data-theme', currentTheme);
@@ -758,8 +758,9 @@ async function handleLoginSubmit() {
             localStorage.setItem('isAdmin', 'true');
         } catch (e) { console.error('Failed to save session:', e); }
 
-        document.getElementById('admin-panel').style.display = 'block';
-        document.getElementById('auth-btn').innerText = "Exit Admin";
+        document.documentElement.setAttribute('data-admin', 'true');
+        document.getElementById('auth-btn').innerText = "Sign Out";
+        document.getElementById('auth-btn').classList.add('admin-active');
         renderTable();
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalContent;
@@ -795,10 +796,11 @@ function logout() {
     isAdmin = false;
     try {
         localStorage.setItem('isAdmin', 'false');
+        document.documentElement.removeAttribute('data-admin');
     } catch (e) { console.error('Failed to clear session:', e); }
 
-    document.getElementById('admin-panel').style.display = 'none';
-    document.getElementById('auth-btn').innerText = "Admin Login";
+    document.getElementById('auth-btn').innerText = "Sign In";
+    document.getElementById('auth-btn').classList.remove('admin-active');
     renderTable();
     showToast("Logged out successfully.");
 }

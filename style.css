@@ -130,12 +130,33 @@ button.active { background: var(--text-main); color: var(--bg); box-shadow: 0 4p
 
 #auth-btn { background: var(--text-main); color: var(--bg); font-weight: 600; }
 #auth-btn:hover { background: var(--primary); color: white; }
+#auth-btn.admin-active { background: var(--danger); color: white; }
+#auth-btn.admin-active:hover { background: #dc2626; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1); }
 
 /* Admin Panel */
 #admin-panel { 
-    display: none; background: var(--card); padding: 20px; 
-    border-radius: 8px; box-shadow: 0 4px 12px var(--shadow); margin-bottom: 20px; 
+    background: var(--card); 
+    border-radius: 8px; 
+    box-shadow: 0 4px 12px var(--shadow); 
+    /* Animation Setup */
+    max-height: 0;
+    opacity: 0;
+    margin-bottom: 0;
+    padding: 0 20px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
 }
+[data-admin="true"] #admin-panel { 
+    max-height: 200px; /* High enough to accommodate content */
+    opacity: 1;
+    margin-bottom: 20px;
+    padding: 20px;
+    border-color: var(--border);
+    pointer-events: auto;
+}
+
 .admin-controls { display: flex; gap: 15px; align-items: center; }
 
 /* Table Styling */
