@@ -709,8 +709,12 @@ async function handleEditSave() {
 }
 
 // --- ADMIN ACTIONS ---
-function handleAuthClick() {
-    if (isAdmin) { logout(); return; }
+async function handleAuthClick() {
+    if (isAdmin) {
+        const confirmed = await showConfirm("Are you sure you want to end the admin session?", "Logout", "#ef4444");
+        if (confirmed) logout();
+        return;
+    }
     document.getElementById('admin-password-input').value = '';
     toggleModal('login-modal', true, () => {
         document.getElementById('admin-password-input').focus();
@@ -1060,6 +1064,51 @@ function showToast(message, type = 'success', action = null) {
     setTimeout(() => {
         toast.remove();
     }, 3500);
+}
+
+function exportToCSV() {
+    if (!allData || allData.length === 0) return showToast("No data to export", "error");
+
+    // Get the projects for the currently selected year
+    const filtered = allData.filter(item => item.year === currentYear);
+    
+    const headers = ["Title", "Location", "Year", "Status", "Files Count", "File Links"];
+    const rows = filtered.map(item => {
+        const files = parseFiles(item.file_link);
+        const fileUrls = files.map(f => f.url).join(" ; ");
+        return [
+            `"${item.title.replace(/"/g, '""')}"`,
+            `"${item.location.replace(/"/g, '""')}"`,
+            item.year,
+            `"${(item.status || 'In Progress').replace(/"/g, '""')}"`,
+            files.length,
+            `"${fileUrls.replace(/"/g, '""')}"`
+        ];
+    });
+
+    // Professional Excel Formatting:
+    // 1. 'sep=,' tells Excel to use commas regardless of system regional settings.
+    // 2. \ufeff (BOM) ensures UTF-8 symbols and characters render correctly.
+    const exportDate = new Date().toLocaleString();
+    const metaHeader = [
+        "sep=,",
+        `"PROJECT DASHBOARD EXPORT - ${currentYear}"`,
+        `"Generated on: ${exportDate}"`,
+        "" // Spacer line
+    ].join("\n");
+
+    const csvBody = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob(["\ufeff" + metaHeader + "\n" + csvBody], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute("href", url);
+    link.setAttribute("download", `projects_export_${currentYear}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("CSV Exported successfully!");
 }
 
 init();
