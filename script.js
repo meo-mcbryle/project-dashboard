@@ -211,7 +211,7 @@ function renderTable(shouldAnimate = false) {
         const fileCount = files.length;
         const previewImg = getFirstImage(files);
 
-        const isUpdated = item.id === lastUpdatedId;
+        const isUpdated = Number(item.id) === Number(lastUpdatedId);
         const animClass = shouldAnimate ? 'fade-in-row' : (isUpdated ? 'row-updated' : '');
         const animStyle = shouldAnimate === true ? `style="animation-delay: ${index * 0.05}s"` : '';
 
@@ -264,7 +264,7 @@ function renderStats(filteredData) {
 
     container.innerHTML = `
         <div class="stat-card">
-            <div class="stat-label">Total Projects (${currentYear})</div>
+            <div class="stat-label">Total Projects<br><span style="opacity:0.7; font-size:0.85em; margin-top:2px">(${currentYear || 'N/A'})</span></div>
             <div class="stat-value">${total}</div>
         </div>
         <div class="stat-card">
@@ -317,13 +317,17 @@ function isImage(url) {
 }
 
 // --- MODAL LOGIC ---
-async function logActivity(action, details) {
-    // Logs an admin action to the Supabase activity_log table
-    try {
-        await supabaseClient.from('activity_log').insert([{ action, details }]);
-    } catch (e) {
-        console.error("Logging failed:", e);
-    }
+async function logActivity(action, details, projectId = null) {
+    // Ensure projectId is a clean number or null (Supabase bigint columns don't like 'NEW' strings)
+    const pId = (projectId && projectId !== 'NEW') ? Number(projectId) : null;
+
+    const { error } = await supabaseClient.from('activity_log').insert([{ 
+        action, 
+        details, 
+        project_id: pId 
+    }]);
+    
+    if (error) console.error("Activity Log Error:", error.message, { action, details, pId });
 }
 
 async function openActivityModal() {
@@ -400,13 +404,20 @@ async function fetchActivityLogs() {
         if (log.action.includes('Created')) badgeClass = 'log-badge-create';
         if (log.action.includes('Deleted') || log.action.includes('Removed')) badgeClass = 'log-badge-delete';
 
+        const canGo = log.project_id && !log.action.includes('Deleted');
+
         return `
             <div class="log-item fade-in-row">
                 <div class="log-content">
                     <span class="log-badge ${badgeClass}">${log.action}</span>
                     <span class="log-details" title="${log.details}">${log.details}</span>
                 </div>
-                <span class="log-time">${date}</span>
+                <div class="log-meta">
+                    <span class="log-time">${date}</span>
+                    ${canGo ? `<button class="btn-log-go" onclick="jumpToProject(${log.project_id})" title="Go to Project">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                    </button>` : ''}
+                </div>
             </div>
         `;
     }).join('');
@@ -422,6 +433,27 @@ async function fetchActivityLogs() {
 async function loadMoreLogs() {
     activityPage++;
     await fetchActivityLogs();
+}
+
+async function jumpToProject(id) {
+    const project = allData.find(p => Number(p.id) === Number(id));
+    if (!project) return showToast("Project not found or was deleted", "error");
+
+    // 1. Switch year if necessary
+    if (currentYear !== project.year) {
+        currentYear = project.year;
+        localStorage.setItem('selectedYear', currentYear);
+    }
+
+    lastUpdatedId = id;
+    closeActivityModal();
+    renderTable(true);
+    
+    // Smooth scroll to the highlighted row
+    setTimeout(() => {
+        const row = document.querySelector('.row-updated');
+        if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 500);
 }
 
 async function handleActivityDateChange() {
@@ -613,8 +645,8 @@ async function handleCreateSave() {
 
     // 1. Insert Initial Project
     const { data, error } = await supabaseClient.from('projects').insert([{ title, location, year, status, file_link: '[]' }]).select();
-    if (error) return showToast("Creation failed: " + error.message, "error");
-    
+    if (error || !data || data.length === 0) return showToast("Creation failed: " + (error?.message || "No data returned"), "error");
+
     const newId = data[0].id;
     const finalFiles = [];
 
@@ -643,7 +675,7 @@ async function handleCreateSave() {
     lastUpdatedId = newId; 
     closeAddModal();
     await fetchData();
-    logActivity('Created Project', title);
+    await logActivity('Created Project', title, newId);
     showToast(`Project "${title}" successfully created!`);
 }
 
@@ -659,7 +691,7 @@ async function handleEditSave() {
 
     const { error } = await supabaseClient.from('projects').update(updates).eq('id', id);
     if (error) return showToast("Save failed: " + error.message, "error");
-    logActivity('Updated Project', updates.title);
+    await logActivity('Updated Project', updates.title, id);
 
     // If the year changed, we follow the project to the new year view
     if (oldProject && oldProject.year !== updates.year) {
@@ -887,7 +919,7 @@ async function uploadFiles(files) {
     await Promise.all(uploadPromises);
 
     await updateItem(id, 'file_link', JSON.stringify(currentFiles));
-    logActivity('Modified Files', item ? item.title : 'New Project');
+    await logActivity('Modified Files', item ? item.title : 'New Project', id);
     renderModalFiles();
 }
 
@@ -923,6 +955,10 @@ async function handleAddUrl() {
     currentFiles.push({ name, url });
     await updateItem(id, 'file_link', JSON.stringify(currentFiles));
     
+    if (id !== 'NEW') {
+        await logActivity('Modified Files', item ? item.title : 'External Link', id);
+    }
+
     urlInput.value = '';
     renderModalFiles();
 }
@@ -946,7 +982,7 @@ async function removeFile(projectId, fileUrl) {
 
     // 1. Update Database
     await updateItem(projectId, 'file_link', JSON.stringify(updatedFiles));
-    logActivity('Removed File', item.title);
+    await logActivity('Removed File', item.title, projectId);
 
     // 2. Attempt to delete from Storage (extract path from URL)
     const urlParts = fileUrl.split(`${BUCKET_NAME}/`);
@@ -967,6 +1003,10 @@ async function deleteItem(id) {
     const confirmed = await showConfirm(`Delete project "${project.title}"?`, "Delete", "#ef4444");
     if (!confirmed) return;
 
+    // Log BEFORE delete: This satisfies Foreign Key constraints (ON DELETE NO ACTION) 
+    // if project_id in activity_log references projects table.
+    await logActivity('Deleted Project', project.title, id);
+
     // Store data for potential restoration (excluding system generated fields)
     const { id: _, created_at: __, ...restoreData } = project;
 
@@ -976,13 +1016,13 @@ async function deleteItem(id) {
         showToast("Delete failed", "error");
     } else {
         await fetchData();
-        logActivity('Deleted Project', project.title);
         showToast(`Project "${project.title}" deleted`, "success", {
             label: "Undo",
             callback: async () => {
                 const { error: undoError } = await supabaseClient.from('projects').insert([restoreData]);
                 if (!undoError) {
                     await fetchData();
+                    await logActivity('Restored Project', project.title, id);
                     showToast("Project restored!");
                 } else {
                     showToast("Undo failed", "error");
