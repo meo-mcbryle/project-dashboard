@@ -18,6 +18,7 @@ const getStorageItem = (key) => {
 let allData = [];
 let currentYear = getStorageItem('selectedYear') ? parseInt(getStorageItem('selectedYear')) : null;
 let isAdmin = getStorageItem('isAdmin') === 'true';
+let currentTheme = getStorageItem('theme') || 'light';
 let searchQuery = '';
 let sortCol = 'title';
 let sortDir = 'asc';
@@ -36,6 +37,11 @@ async function init() {
     // Force UI state based on session to ensure persistence on refresh
     if (adminPanel) adminPanel.style.display = isAdmin ? 'block' : 'none';
     if (authBtn) authBtn.innerText = isAdmin ? "Exit Admin" : "Admin Login";
+
+    // Initialize Theme
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) themeToggle.checked = (currentTheme === 'dark');
 
     await fetchData();
     initDropZone();
@@ -576,6 +582,14 @@ function logout() {
     showToast("Logged out successfully.");
 }
 
+function toggleTheme() {
+    currentTheme = document.getElementById('theme-toggle').checked ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    try {
+        localStorage.setItem('theme', currentTheme);
+    } catch (e) { console.error('Failed to save theme:', e); }
+}
+
 async function updateItem(id, field, value) {
     const { error } = await supabaseClient.from('projects').update({ [field]: value }).eq('id', id);
     if (error) {
@@ -809,6 +823,10 @@ function showToast(message, type = 'success', action = null) {
         };
         toast.appendChild(actionBtn);
     }
+
+    const progress = document.createElement('div');
+    progress.className = 'toast-progress';
+    toast.appendChild(progress);
 
     container.appendChild(toast);
     setTimeout(() => {

@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Project Dashboard</title>
+    <script>
+        // Immediately-Invoked Function Expression to prevent theme flickering
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -12,7 +19,13 @@
 <div class="container">
     <div class="header">
         <h1>Project Dashboard</h1>
-        <button id="auth-btn" onclick="handleAuthClick()">Admin Login</button>
+        <div class="header-actions">
+            <label class="theme-switch" title="Toggle Dark Mode">
+                <input type="checkbox" id="theme-toggle" onclick="toggleTheme()">
+                <span class="slider"></span>
+            </label>
+            <button id="auth-btn" onclick="handleAuthClick()">Admin Login</button>
+        </div>
     </div>
 
     <div id="admin-panel">
@@ -92,7 +105,7 @@
             </div>
             <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; padding-top: 20px; border-top: 1px solid var(--border);">
                 <button onclick="closeLoginModal()" style="padding: 10px 18px; color: var(--text-muted);">Cancel</button>
-                <button id="login-submit-btn" onclick="handleLoginSubmit()" style="padding: 10px 18px; background:var(--text-main); color:white; border-radius: 8px; min-width: 110px;">Login</button>
+                <button id="login-submit-btn" onclick="handleLoginSubmit()" style="padding: 10px 18px; background:var(--text-main); color:var(--bg); border-radius: 8px; min-width: 110px;">Login</button>
             </div>
         </div>
     </div>
@@ -112,7 +125,7 @@
             </div>
             <div>
                 <label style="display:block; margin-bottom:6px; font-weight:600; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Location</label>
-                <input type="text" id="add-proj-location" placeholder="e.g. Austin, TX">
+                <input type="text" id="add-proj-location" placeholder="e.g. Imelda, Labason">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                 <div>
