@@ -182,6 +182,7 @@ th, td { text-align: left; padding: 16px 15px; border-bottom: 1px solid var(--bo
 th { background: var(--bg-subtle); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; color: var(--text-muted); position: sticky; top: 0; z-index: 10; }
 tr:hover td { background: var(--bg-subtle); }
 tr:hover { position: relative; z-index: 105; transition: background 0.1s ease; }
+tr { cursor: pointer; }
 tr:last-child td { border-bottom: none; }
 
 /* Column Widths */
@@ -403,7 +404,7 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
     position: absolute;
     top: -6px;
     right: 4px;
-    font-size: 0.4rem;
+    font-size: 0.5rem;
     background: var(--primary);
     color: white;
     padding: 1px 3px;
@@ -453,6 +454,20 @@ button:hover .beta-tag {
     font-size: 0.8125rem;
     padding: 0 12px;
 }
+
+/* Details Modal Styling */
+.details-grid { display: flex; flex-direction: column; gap: 16px; }
+.details-item label { 
+    display: block; 
+    font-size: 0.65rem; 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    color: var(--text-muted); 
+    margin-bottom: 4px; 
+    letter-spacing: 0.05em;
+}
+.details-value { font-size: 1.1rem; font-weight: 600; color: var(--text-main); }
+.details-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
 .link-badge { 
     font-size: 0.65rem; 

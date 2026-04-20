@@ -227,6 +227,43 @@
     </div>
 </div>
 
+<!-- Project Details Modal -->
+<div id="details-modal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>Project Details</h3>
+            <button class="close-modal" onclick="closeDetailsModal()">&times;</button>
+        </div>
+        <div class="details-grid">
+            <div class="details-item">
+                <label>Title</label>
+                <div id="details-title" class="details-value"></div>
+            </div>
+            <div class="details-item">
+                <label>Location</label>
+                <div id="details-location" class="details-value"></div>
+            </div>
+            <div class="details-row">
+                <div class="details-item">
+                    <label>Year</label>
+                    <div id="details-year" class="details-value"></div>
+                </div>
+                <div class="details-item">
+                    <label>Status</label>
+                    <div id="details-status"></div>
+                </div>
+            </div>
+            <div class="details-item" style="margin-top: 10px;">
+                <label>Attachments</label>
+                <div id="details-files" class="file-list"></div>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border);">
+            <button onclick="closeDetailsModal()" style="padding: 10px 24px; background: var(--text-main); color: var(--bg); border-radius: 8px; font-weight: 600;">Close</button>
+        </div>
+    </div>
+</div>
+
 <!-- File Modal -->
 <div id="file-modal" class="modal">
     <div class="modal-content">

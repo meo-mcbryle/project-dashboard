@@ -61,7 +61,8 @@ async function init() {
                 'login-modal': closeLoginModal,
                 'error-modal': closeErrorModal,
                 'confirm-modal': () => closeConfirmModal(false),
-                'activity-modal': closeActivityModal
+                'activity-modal': closeActivityModal,
+                'details-modal': closeDetailsModal
             };
             if (closers[e.target.id]) closers[e.target.id]();
         }
@@ -216,7 +217,7 @@ function renderTable(shouldAnimate = false) {
         const animStyle = shouldAnimate === true ? `style="animation-delay: ${index * 0.05}s"` : '';
 
         return `
-        <tr class="${animClass}" ${animStyle}>
+        <tr class="${animClass}" ${animStyle} onclick="openDetailsModal(${item.id})">
             <td class="title-cell col-title" data-label="Project" title="${item.title}">
                 <strong>${item.title}</strong>
                 ${previewImg ? `<img src="${previewImg.url}" alt="Preview" class="thumbnail-preview">` : ''}
@@ -229,7 +230,7 @@ function renderTable(shouldAnimate = false) {
             </td>
             <td class="col-files" data-label="Files">
                 ${(fileCount > 0 || isAdmin) ? 
-                    `<button class="btn-view-files" onclick="openFileModal(${item.id})">
+                    `<button class="btn-view-files" onclick="event.stopPropagation(); openFileModal(${item.id})">
                         ${fileCount > 0 ? `View Files (${fileCount})` : '+ Add Files'}
                      </button>` : 
                     `<span style="color:var(--text-muted); font-size:0.875rem">No files attached</span>`
@@ -237,11 +238,11 @@ function renderTable(shouldAnimate = false) {
             </td>
             <td class="admin-only col-admin" data-label="Actions" style="${isAdmin ? '' : 'display:none'}">
                 <div class="action-wrapper">
-                    <button class="btn-action edit" onclick="openEditModal(${item.id})" data-tooltip="Edit" aria-label="Edit Project">
+                    <button class="btn-action edit" onclick="event.stopPropagation(); openEditModal(${item.id})" data-tooltip="Edit" aria-label="Edit Project">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     </button>
                     <div class="action-divider"></div>
-                    <button class="btn-action delete" onclick="deleteItem(${item.id})" data-tooltip="Delete" aria-label="Delete Project">
+                    <button class="btn-action delete" onclick="event.stopPropagation(); deleteItem(${item.id})" data-tooltip="Delete" aria-label="Delete Project">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                 </div>
@@ -486,6 +487,40 @@ async function clearAllLogs() {
 
 function closeActivityModal() {
     toggleModal('activity-modal', false);
+}
+
+function openDetailsModal(projectId) {
+    const project = allData.find(p => p.id === projectId);
+    if (!project) return;
+
+    document.getElementById('details-title').innerText = project.title || 'N/A';
+    document.getElementById('details-location').innerText = project.location || 'N/A';
+    document.getElementById('details-year').innerText = project.year || 'N/A';
+    
+    const statusEl = document.getElementById('details-status');
+    statusEl.innerHTML = `<span class="status-badge ${getStatusClass(project.status)}">${project.status || 'In Progress'}</span>`;
+
+    const files = parseFiles(project.file_link);
+    const filesContainer = document.getElementById('details-files');
+    if (files.length === 0) {
+        filesContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.875rem;">No attachments available.</p>';
+    } else {
+        filesContainer.innerHTML = files.map(file => {
+            const isExternal = !file.url.includes(SUPABASE_URL);
+            return `
+                <div class="file-item">
+                    ${isExternal ? `<span class="link-badge">Link</span>` : ''}
+                    <a href="${file.url}" target="_blank">${file.name}</a>
+                </div>
+            `;
+        }).join('');
+    }
+
+    toggleModal('details-modal', true);
+}
+
+function closeDetailsModal() {
+    toggleModal('details-modal', false);
 }
 
 function toggleModal(id, show, callback) {
