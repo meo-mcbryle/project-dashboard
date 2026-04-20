@@ -383,21 +383,46 @@ th.active-sort .sort-icon { opacity: 1; color: var(--primary); }
     color: var(--text-main); font-weight: 500; 
     word-break: break-word; line-height: 1.4;
 }
-.log-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.log-time { font-size: 0.7rem; color: var(--text-muted); opacity: 0.7; margin-left: 10px; white-space: nowrap; }
-
-.btn-log-go {
-    background: var(--bg-subtle);
-    border: 1px solid var(--border);
-    color: var(--primary);
-    padding: 4px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    transition: all 0.2s;
+.log-meta { 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    flex-shrink: 0; 
 }
-.btn-log-go:hover { background: var(--primary); color: white; transform: translateX(2px); }
-.btn-log-go svg { width: 14px; height: 14px; }
+.log-time { 
+    font-size: 0.7rem; 
+    color: var(--text-muted); 
+    opacity: 0.7; 
+    margin-right: 8px; 
+    white-space: nowrap; 
+}
+
+.btn-log-go, .btn-log-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-muted);
+}
+.btn-log-go:hover { 
+    color: var(--primary); 
+    background-color: rgba(37, 99, 235, 0.1); 
+    border-color: rgba(37, 99, 235, 0.2); 
+}
+.btn-log-delete:hover { 
+    color: var(--danger); 
+    background-color: rgba(239, 68, 68, 0.1); 
+    border-color: rgba(239, 68, 68, 0.2); 
+}
+.btn-log-go:active, .btn-log-delete:active { transform: scale(0.92); }
+.btn-log-go svg, .btn-log-delete svg { width: 16px; height: 16px; stroke-width: 2; }
 
 /* Feature Tags */
 .beta-tag {
